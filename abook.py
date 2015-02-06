@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Python libraryto convert between Abook and vCard"""
 
 from configobj import ConfigObj
 from hashlib import sha1
@@ -23,15 +24,22 @@ from threading import Lock
 from vobject import readOne, readComponents, vCard
 from vobject.vcard import Name, Address
 
+
 class Abook(object):
+    """Represents a Abook addressbook"""
 
     def __init__(self, filename=None):
+        """Constructor
+
+        filename -- the filename to load
+        """
         self.filename = filename
         self._last_modified = 0
         self._events = []
         self._lock = Lock()
 
     def to_vcf(self):
+        """ Converts to vCard string"""
         self._lock.acquire()
 
         if getmtime(self.filename) > self._last_modified:
@@ -43,6 +51,7 @@ class Abook(object):
         return '\r\n'.join([v.serialize() for v in self._events])
 
     def append(self, text):
+        """Appends an address to the Abook addressbook"""
         self._lock.acquire()
 
         book = ConfigObj(self.filename, encoding='utf-8', list_values=False)
@@ -54,6 +63,7 @@ class Abook(object):
         self._lock.release()
 
     def remove(self, name):
+        """Removes an address to the Abook addressbook"""
         uid = name.split('@')[0].split('-')
         if len(uid) != 2:
             return
@@ -70,6 +80,7 @@ class Abook(object):
         self._lock.release()
 
     def replace(self, name, text):
+        """Updates an address to the Abook addressbook"""
         uid = name.split('@')[0].split('-')
         if len(uid) != 2:
             return
@@ -87,14 +98,17 @@ class Abook(object):
 
     @staticmethod
     def _gen_uid(index, name):
+        """Generates a UID based on the index in the Abook file and the hash of the name"""
         return '%s-%s@%s' % (index, sha1(name.encode('utf-8')).hexdigest(), getfqdn())
 
     @staticmethod
     def _gen_name(name):
+        """Splits the name into family and given name"""
         return Name(family=name.split(' ')[-1], given=name.split(' ')[:-1])
 
     @staticmethod
     def _gen_addr(entry):
+        """Generates a vobject Address objects"""
         return Address(street=entry.get('address', ''),
                        extended=entry.get('address2', ''),
                        city=entry.get('city', ''),
@@ -103,6 +117,7 @@ class Abook(object):
                        country=entry.get('country', ''))
 
     def _add_photo(self, card, name):
+        """Tries to load a foto and add it to the vCard"""
         try:
             photo_file = join(dirname(self.filename), 'photo/%s.jpeg' % name)
             jpeg = open(photo_file, 'rb').read()
@@ -114,6 +129,7 @@ class Abook(object):
             pass
 
     def _to_vcard(self, index, entry):
+        """Returns a vobject vCard of the Abook entry"""
         card = vCard()
 
         card.add('uid').value = Abook._gen_uid(index, entry['name'])
@@ -161,6 +177,7 @@ class Abook(object):
         return card
 
     def to_vcards(self):
+        """Returns a list of vobject vCards"""
         book = ConfigObj(self.filename, encoding='utf-8', list_values=False)
         cards = []
 
@@ -171,6 +188,7 @@ class Abook(object):
 
     @staticmethod
     def _conv_adr(adr, entry):
+        """Converts to Abook address format"""
         if adr.value.street:
             entry['address'] = adr.value.street
         if adr.value.extended:
@@ -186,6 +204,7 @@ class Abook(object):
 
     @staticmethod
     def _conv_tel_list(tel_list, entry):
+        """Converts to Abook phone types"""
         for tel in tel_list:
             if not hasattr(tel, 'TYPE_param'):
                 entry['other'] = tel.value
@@ -198,6 +217,7 @@ class Abook(object):
 
     @staticmethod
     def to_abook(card, section, book):
+        """Converts a vCard to Abook"""
         book[section] = {}
         book[section]['name'] = card.fn.value
 
@@ -228,6 +248,7 @@ class Abook(object):
 
     @staticmethod
     def _write(book):
+        """Convert from ConfigObj to Abook formating"""
         filename = book.filename
         book.filename = None
         entries = book.write()
@@ -240,6 +261,7 @@ class Abook(object):
 
     @staticmethod
     def abook_file(vcard, bookfile):
+        """Write a new Abook file with the given vcards"""
         book = ConfigObj(encoding='utf-8', list_values=False)
         book.filename = bookfile.name
         book.initial_comment = ['abook addressbook file']
@@ -254,6 +276,7 @@ class Abook(object):
 
 
 def abook2vcf():
+    """Command line tool to convert from Abook to vCard"""
     from argparse import ArgumentParser, FileType
     from os.path import expanduser
     from sys import stdout
@@ -267,7 +290,9 @@ def abook2vcf():
 
     args.outfile.write(Abook(args.infile).to_vcf())
 
+
 def vcf2abook():
+    """Command line tool to convert from vCard to Abook"""
     from argparse import ArgumentParser, FileType
     from sys import stdin, stdout
 
