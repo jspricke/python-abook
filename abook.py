@@ -253,9 +253,13 @@ class Abook(object):
         book.filename = None
         entries = book.write()
         entries = [e.replace(' = ', '=', 1) for e in entries]
+        entries.append('\n')
+        content = '\n'.join(entries)
+        content = content.replace('\n[', '\n\n[')
+        content = content.replace('\n[0]', '\n\n[0]')
 
         if filename:
-            open(filename, 'w').write('\n'.join(entries))
+            open(filename, 'w').write(content)
         else:
             return '\n'.join(entries)
 
