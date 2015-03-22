@@ -117,7 +117,7 @@ class Abook(object):
                        country=entry.get('country', ''))
 
     def _add_photo(self, card, name):
-        """Tries to load a foto and add it to the vCard"""
+        """Tries to load a photo and add it to the vCard"""
         try:
             photo_file = join(dirname(self.filename), 'photo/%s.jpeg' % name)
             jpeg = open(photo_file, 'rb').read()
