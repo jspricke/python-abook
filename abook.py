@@ -252,6 +252,7 @@ class Abook(object):
         filename = book.filename
         book.filename = None
         entries = book.write()
+        entries = [e for e in entries if e is not '']
         entries = [e.replace(' = ', '=', 1) for e in entries]
         entries.append('\n')
         content = '\n'.join(entries)
