@@ -3,7 +3,7 @@ from setuptools import setup
 setup(name='abook',
       version='0.2.0',
       description='''
-       Remind Abook lib
+       Abook Python lib
        ''',
       author='Jochen Sprickerhof',
       author_email='abook@jochen.sprickerhof.de',
