@@ -3,7 +3,7 @@ from setuptools import setup
 setup(name='abook',
       version='0.2.1',
       description='''
-       Abook Python lib
+       Python library to convert between Abook and vCard
        ''',
       author='Jochen Sprickerhof',
       author_email='abook@jochen.sprickerhof.de',

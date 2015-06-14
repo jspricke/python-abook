@@ -1,7 +1,7 @@
 Python library to convert between Abook and vCard
 =================================================
 
-* http://abook.sourceforge.net/
+* Reads and writes `Abook <http://abook.sourceforge.net/>` files.
 * Saves photo to ~/.abook/photo/NAME.jpeg (if directory is present).
 
 Configuration
