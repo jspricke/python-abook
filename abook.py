@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Python libraryto convert between Abook and vCard"""
 
-from configobj import ConfigObj
 from hashlib import sha1
 from os.path import getmtime, dirname, join
 from socket import getfqdn
 from threading import Lock
-from vobject import readOne, readComponents, vCard
-from vobject.vcard import Name, Address
+from configobj import ConfigObj
+from card_me import readOne, readComponents, vCard
+from card_me.vcard import Name, Address
 
 
 class Abook(object):
