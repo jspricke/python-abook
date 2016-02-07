@@ -54,7 +54,8 @@ class Abook(object):
         """Appends an address to the Abook addressbook"""
         self._lock.acquire()
 
-        book = ConfigObj(self.filename, encoding='utf-8', list_values=False)
+        book = ConfigObj(self.filename, encoding='utf-8',
+                         default_encoding='utf-8', list_values=False)
 
         section = max([int(k) for k in book.keys()[1:]])
         Abook.to_abook(readOne(text), str(section+1), book)
@@ -70,7 +71,8 @@ class Abook(object):
 
         self._lock.acquire()
 
-        book = ConfigObj(self.filename, encoding='utf-8', list_values=False)
+        book = ConfigObj(self.filename, encoding='utf-8',
+                         default_encoding='utf-8', list_values=False)
         linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
 
         if linehash == uid[1]:
@@ -87,7 +89,8 @@ class Abook(object):
 
         self._lock.acquire()
 
-        book = ConfigObj(self.filename, encoding='utf-8', list_values=False)
+        book = ConfigObj(self.filename, encoding='utf-8',
+                         default_encoding='utf-8', list_values=False)
         linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
 
         if linehash == uid[1]:
@@ -178,7 +181,8 @@ class Abook(object):
 
     def to_vcards(self):
         """Returns a list of vobject vCards"""
-        book = ConfigObj(self.filename, encoding='utf-8', list_values=False)
+        book = ConfigObj(self.filename, encoding='utf-8',
+                         default_encoding='utf-8', list_values=False)
         cards = []
 
         for (index, entry) in book.items()[1:]:
@@ -267,7 +271,8 @@ class Abook(object):
     @staticmethod
     def abook_file(vcard, bookfile):
         """Write a new Abook file with the given vcards"""
-        book = ConfigObj(encoding='utf-8', list_values=False)
+        book = ConfigObj(encoding='utf-8', default_encoding='utf-8',
+                         list_values=False)
         book.filename = bookfile.name
         book.initial_comment = ['abook addressbook file']
 
