@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='abook',
-      version='0.2.1',
+      version='0.3.0',
       description='''
        Python library to convert between Abook and vCard
        ''',
