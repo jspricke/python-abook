@@ -278,7 +278,7 @@ class Abook(object):
 
         book['format'] = {}
         book['format']['program'] = 'abook'
-        book['format']['version'] = '0.6.0pre2'
+        book['format']['version'] = '0.6.1'
 
         for (i, card) in enumerate(readComponents(vcard.read())):
             Abook.to_abook(card, str(i), book)
