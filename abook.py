@@ -17,7 +17,7 @@
 """Python libraryto convert between Abook and vCard"""
 
 from hashlib import sha1
-from os.path import getmtime, dirname, join
+from os.path import getmtime, dirname, expanduser, join
 from socket import getfqdn
 from threading import Lock
 from configobj import ConfigObj
@@ -273,7 +273,7 @@ class Abook(object):
         """Write a new Abook file with the given vcards"""
         book = ConfigObj(encoding='utf-8', default_encoding='utf-8',
                          list_values=False)
-        book.filename = bookfile.name
+        book.filename = bookfile
         book.initial_comment = ['abook addressbook file']
 
         book['format'] = {}
@@ -308,9 +308,9 @@ def vcf2abook():
 
     parser = ArgumentParser(description='Converter from vCard to Abook syntax.')
     parser.add_argument('infile', nargs='?', type=FileType('r'), default=stdin,
-                        help='Input iCalendar file (default: stdin)')
-    parser.add_argument('outfile', nargs='?', type=FileType('w'), default=stdout,
-                        help='Output iCalendar file (default: stdout)')
+                        help='Input vCard file (default: stdin)')
+    parser.add_argument('outfile', nargs='?', default=join(expanduser('~'), '.abook/addressbook'),
+                        help='Output Abook file (default: ~/.abook/addressbook)')
     args = parser.parse_args()
 
     Abook.abook_file(args.infile, args.outfile)
