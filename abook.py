@@ -246,7 +246,7 @@ class Abook(object):
         if hasattr(card, 'photo') and book.filename:
             try:
                 photo_file = join(dirname(book.filename), 'photo/%s.%s' % (card.fn.value, card.photo.TYPE_param))
-                open(photo_file, 'w').write(card.photo.value)
+                open(photo_file, 'wb').write(card.photo.value)
             except IOError:
                 pass
 
