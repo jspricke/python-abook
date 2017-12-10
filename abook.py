@@ -49,7 +49,10 @@ class Abook(object):
 
     def append(self, text):
         """Appends an address to the Abook addressbook"""
+        return self.append_vobject(readOne(text))
 
+    def append_vobject(self, text):
+        """Appends an address to the Abook addressbook"""
         with self._lock:
             book = ConfigObj(self.filename, encoding='utf-8',
                              default_encoding='utf-8', list_values=False)
@@ -58,6 +61,7 @@ class Abook(object):
             Abook.to_abook(text, str(section + 1), book)
             Abook._write(book)
 
+        return Abook._gen_uid(section, text.fn.value)
 
     def remove(self, name):
         """Removes an address to the Abook addressbook"""
@@ -76,6 +80,10 @@ class Abook(object):
 
     def replace(self, name, text):
         """Updates an address to the Abook addressbook"""
+        return self.replace_vobject(name, readOne(text))
+
+    def replace_vobject(self, name, text):
+        """Updates an address to the Abook addressbook"""
         uid = name.split('@')[0].split('-')
         if len(uid) != 2:
             return
@@ -89,6 +97,7 @@ class Abook(object):
                 Abook.to_abook(text, uid[0], book)
                 Abook._write(book)
 
+        return Abook._gen_uid(uid[0], text.fn.value)
 
     @staticmethod
     def _gen_uid(index, name):
