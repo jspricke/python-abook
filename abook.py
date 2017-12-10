@@ -1,6 +1,6 @@
 # Python library to convert between Abook and vCard
 #
-# Copyright (C) 2013-2015  Jochen Sprickerhof
+# Copyright (C) 2013-2017  Jochen Sprickerhof
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Python libraryto convert between Abook and vCard"""
+"""Python library to convert between Abook and vCard"""
 
 from hashlib import sha1
 from os.path import getmtime, dirname, expanduser, join
