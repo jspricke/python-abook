@@ -20,7 +20,7 @@ from hashlib import sha1
 from os.path import getmtime, dirname, expanduser, join
 from socket import getfqdn
 from threading import Lock
-from configobj import ConfigObj
+from configparser import ConfigParser
 from vobject import readOne, readComponents, vCard
 from vobject.vcard import Name, Address
 
@@ -53,13 +53,13 @@ class Abook(object):
 
     def append_vobject(self, text):
         """Appends an address to the Abook addressbook"""
+        book = ConfigParser(default_section='format')
         with self._lock:
-            book = ConfigObj(self.filename, encoding='utf-8',
-                             default_encoding='utf-8', list_values=False)
-
+            book.read(self.filename)
             section = max([int(k) for k in book.keys()[1:]])
-            Abook.to_abook(text, str(section + 1), book)
-            Abook._write(book)
+            Abook.to_abook(text, str(section + 1), book, self.filename)
+            with open(self.filename, 'w') as fp:
+                book.write(fp, False)
 
         return Abook._gen_uid(section, text.fn.value)
 
@@ -69,14 +69,14 @@ class Abook(object):
         if len(uid) != 2:
             return
 
+        book = ConfigParser(default_section='format')
         with self._lock:
-            book = ConfigObj(self.filename, encoding='utf-8',
-                             default_encoding='utf-8', list_values=False)
+            book.read(self.filename)
             linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
-
             if linehash == uid[1]:
                 del book[uid[0]]
-                Abook._write(book)
+                with open(self.filename, 'w') as fp:
+                    book.write(fp, False)
 
     def replace(self, name, text):
         """Updates an address to the Abook addressbook"""
@@ -88,14 +88,14 @@ class Abook(object):
         if len(uid) != 2:
             return
 
+        book = ConfigParser(default_section='format')
         with self._lock:
-            book = ConfigObj(self.filename, encoding='utf-8',
-                             default_encoding='utf-8', list_values=False)
+            book.read(self.filename)
             linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
-
             if linehash == uid[1]:
-                Abook.to_abook(text, uid[0], book)
-                Abook._write(book)
+                Abook.to_abook(text, uid[0], book, self.filename)
+                with open(self.filename, 'w') as fp:
+                    book.write(fp, False)
 
         return Abook._gen_uid(uid[0], text.fn.value)
 
@@ -131,11 +131,11 @@ class Abook(object):
         except IOError:
             pass
 
-    def _to_vcard(self, index, entry):
+    def _to_vcard(self, entry):
         """Returns a vobject vCard of the Abook entry"""
         card = vCard()
 
-        card.add('uid').value = Abook._gen_uid(index, entry['name'])
+        card.add('uid').value = Abook._gen_uid(entry.name, entry['name'])
         card.add('fn').value = entry['name']
         card.add('n').value = Abook._gen_name(entry['name'])
 
@@ -181,14 +181,10 @@ class Abook(object):
 
     def to_vcards(self):
         """Returns a list of vobject vCards"""
-        book = ConfigObj(self.filename, encoding='utf-8',
-                         default_encoding='utf-8', list_values=False)
-        cards = []
+        book = ConfigParser(default_section='format')
+        book.read(self.filename)
 
-        for (index, entry) in book.items()[1:]:
-            cards.append(self._to_vcard(index, entry))
-
-        return cards
+        return [self._to_vcard(book[entry]) for entry in book.sections()]
 
     @staticmethod
     def _conv_adr(adr, entry):
@@ -220,7 +216,7 @@ class Abook(object):
                 entry['mobile'] = tel.value
 
     @staticmethod
-    def to_abook(card, section, book):
+    def to_abook(card, section, book, bookfile=None):
         """Converts a vCard to Abook"""
         book[section] = {}
         book[section]['name'] = card.fn.value
@@ -243,46 +239,26 @@ class Abook(object):
         if hasattr(card, 'note'):
             book[section]['notes'] = card.note.value
 
-        if hasattr(card, 'photo') and book.filename:
+        if hasattr(card, 'photo') and bookfile:
             try:
-                photo_file = join(dirname(book.filename), 'photo/%s.%s' % (card.fn.value, card.photo.TYPE_param))
+                photo_file = join(dirname(bookfile), 'photo/%s.%s' % (card.fn.value, card.photo.TYPE_param))
                 open(photo_file, 'wb').write(card.photo.value)
             except IOError:
                 pass
 
     @staticmethod
-    def _write(book):
-        """Convert from ConfigObj to Abook formating"""
-        filename = book.filename
-        book.filename = None
-        entries = book.write()
-        entries = [e.decode('utf-8') for e in entries if e is not '']
-        entries = [e.replace(' = ', '=', 1) for e in entries]
-        entries.append('\n')
-        content = '\n'.join(entries)
-        content = content.replace('\n[', '\n\n[')
-        content = content.replace('\n[0]', '\n\n[0]')
-
-        if filename:
-            open(filename, 'w').write(content)
-        else:
-            return '\n'.join(entries)
-
-    @staticmethod
     def abook_file(vcard, bookfile):
         """Write a new Abook file with the given vcards"""
-        book = ConfigObj(encoding='utf-8', default_encoding='utf-8',
-                         list_values=False)
-        book.filename = bookfile
-        book.initial_comment = ['abook addressbook file']
+        book = ConfigParser(default_section='format')
 
         book['format'] = {}
         book['format']['program'] = 'abook'
         book['format']['version'] = '0.6.1'
 
         for (i, card) in enumerate(readComponents(vcard.read())):
-            Abook.to_abook(card, str(i), book)
-        Abook._write(book)
+            Abook.to_abook(card, str(i), book, bookfile)
+        with open(bookfile, 'w') as fp:
+            book.write(fp, False)
 
 
 def abook2vcf():
