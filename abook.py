@@ -179,6 +179,15 @@ class Abook(object):
 
         return card
 
+    def get_uids(self, filename=None):
+        """Return a list of UIDs
+        filename  -- unused, for API compatibility only
+        """
+        book = ConfigParser(default_section='format')
+        book.read(self.filename)
+
+        return [Abook._gen_uid(entry, book[entry]['name']) for entry in book.sections()]
+
     def to_vcards(self):
         """Returns a list of vobject vCards"""
         book = ConfigParser(default_section='format')
