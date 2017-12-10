@@ -295,7 +295,7 @@ def abook2vcf():
 def vcf2abook():
     """Command line tool to convert from vCard to Abook"""
     from argparse import ArgumentParser, FileType
-    from sys import stdin, stdout
+    from sys import stdin
 
     parser = ArgumentParser(description='Converter from vCard to Abook syntax.')
     parser.add_argument('infile', nargs='?', type=FileType('r'), default=stdin,
