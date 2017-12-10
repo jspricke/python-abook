@@ -195,6 +195,22 @@ class Abook(object):
 
         return [self._to_vcard(book[entry]) for entry in book.sections()]
 
+    def to_vobject(self, filename=None, uid=None):
+        """Returns the vobject corresponding to the uid
+        filename  -- unused, for API compatibility only
+        uid -- the UID to get (required)
+        """
+        book = ConfigParser(default_section='format')
+        book.read(self.filename)
+
+        uid = uid.split('@')[0].split('-')
+        if len(uid) != 2:
+            return
+        linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
+
+        if linehash == uid[1]:
+            return self._to_vcard(book[uid[0]])
+
     @staticmethod
     def _conv_adr(adr, entry):
         """Converts to Abook address format"""
