@@ -18,7 +18,7 @@ setup(name='abook',
           'Topic :: Software Development :: Libraries :: Python Modules',
           ],
 
-      install_requires=['configobj', 'python-card-me'],
+      install_requires=['configobj', 'vobject'],
       py_modules=['abook'],
 
       entry_points={

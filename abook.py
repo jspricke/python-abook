@@ -21,8 +21,8 @@ from os.path import getmtime, dirname, expanduser, join
 from socket import getfqdn
 from threading import Lock
 from configobj import ConfigObj
-from card_me import readOne, readComponents, vCard
-from card_me.vcard import Name, Address
+from vobject import readOne, readComponents, vCard
+from vobject.vcard import Name, Address
 
 
 class Abook(object):
