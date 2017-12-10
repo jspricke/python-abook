@@ -40,28 +40,24 @@ class Abook(object):
 
     def to_vcf(self):
         """ Converts to vCard string"""
-        self._lock.acquire()
-
-        if getmtime(self.filename) > self._last_modified:
-            self._events = self.to_vcards()
-            self._last_modified = getmtime(self.filename)
-
-        self._lock.release()
+        with self._lock:
+            if getmtime(self.filename) > self._last_modified:
+                self._events = self.to_vcards()
+                self._last_modified = getmtime(self.filename)
 
         return '\r\n'.join([v.serialize() for v in self._events])
 
     def append(self, text):
         """Appends an address to the Abook addressbook"""
-        self._lock.acquire()
 
-        book = ConfigObj(self.filename, encoding='utf-8',
-                         default_encoding='utf-8', list_values=False)
+        with self._lock:
+            book = ConfigObj(self.filename, encoding='utf-8',
+                             default_encoding='utf-8', list_values=False)
 
-        section = max([int(k) for k in book.keys()[1:]])
-        Abook.to_abook(readOne(text), str(section+1), book)
-        Abook._write(book)
+            section = max([int(k) for k in book.keys()[1:]])
+            Abook.to_abook(text, str(section + 1), book)
+            Abook._write(book)
 
-        self._lock.release()
 
     def remove(self, name):
         """Removes an address to the Abook addressbook"""
@@ -69,17 +65,14 @@ class Abook(object):
         if len(uid) != 2:
             return
 
-        self._lock.acquire()
+        with self._lock:
+            book = ConfigObj(self.filename, encoding='utf-8',
+                             default_encoding='utf-8', list_values=False)
+            linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
 
-        book = ConfigObj(self.filename, encoding='utf-8',
-                         default_encoding='utf-8', list_values=False)
-        linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
-
-        if linehash == uid[1]:
-            del book[uid[0]]
-            Abook._write(book)
-
-        self._lock.release()
+            if linehash == uid[1]:
+                del book[uid[0]]
+                Abook._write(book)
 
     def replace(self, name, text):
         """Updates an address to the Abook addressbook"""
@@ -87,17 +80,15 @@ class Abook(object):
         if len(uid) != 2:
             return
 
-        self._lock.acquire()
+        with self._lock:
+            book = ConfigObj(self.filename, encoding='utf-8',
+                             default_encoding='utf-8', list_values=False)
+            linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
 
-        book = ConfigObj(self.filename, encoding='utf-8',
-                         default_encoding='utf-8', list_values=False)
-        linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
+            if linehash == uid[1]:
+                Abook.to_abook(text, uid[0], book)
+                Abook._write(book)
 
-        if linehash == uid[1]:
-            Abook.to_abook(readOne(text), uid[0], book)
-            Abook._write(book)
-
-        self._lock.release()
 
     @staticmethod
     def _gen_uid(index, name):
