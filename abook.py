@@ -35,17 +35,20 @@ class Abook(object):
         """
         self.filename = filename
         self._last_modified = 0
-        self._events = []
+        self._book = []
         self._lock = Lock()
+
+    def _update(self):
+        """ Update internal state."""
+        with self._lock:
+            if getmtime(self.filename) > self._last_modified:
+                self._last_modified = getmtime(self.filename)
+                self._book = ConfigParser(default_section='format')
+                self._book.read(self.filename)
 
     def to_vcf(self):
         """ Converts to vCard string"""
-        with self._lock:
-            if getmtime(self.filename) > self._last_modified:
-                self._events = self.to_vcards()
-                self._last_modified = getmtime(self.filename)
-
-        return '\r\n'.join([v.serialize() for v in self._events])
+        return '\r\n'.join([v.serialize() for v in self.to_vcards()])
 
     def append(self, text):
         """Appends an address to the Abook addressbook"""
@@ -183,33 +186,28 @@ class Abook(object):
         """Return a list of UIDs
         filename  -- unused, for API compatibility only
         """
-        book = ConfigParser(default_section='format')
-        book.read(self.filename)
-
-        return [Abook._gen_uid(entry, book[entry]['name']) for entry in book.sections()]
+        self._update()
+        return [Abook._gen_uid(entry, self._book[entry]['name']) for entry in self._book.sections()]
 
     def to_vcards(self):
         """Returns a list of vobject vCards"""
-        book = ConfigParser(default_section='format')
-        book.read(self.filename)
-
-        return [self._to_vcard(book[entry]) for entry in book.sections()]
+        self._update()
+        return [self._to_vcard(self._book[entry]) for entry in self._book.sections()]
 
     def to_vobject(self, filename=None, uid=None):
         """Returns the vobject corresponding to the uid
         filename  -- unused, for API compatibility only
         uid -- the UID to get (required)
         """
-        book = ConfigParser(default_section='format')
-        book.read(self.filename)
+        self._update()
 
         uid = uid.split('@')[0].split('-')
         if len(uid) != 2:
             return
-        linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
+        linehash = sha1(self._book[uid[0]]['name'].encode('utf-8')).hexdigest()
 
         if linehash == uid[1]:
-            return self._to_vcard(book[uid[0]])
+            return self._to_vcard(self._book[uid[0]])
 
     @staticmethod
     def _conv_adr(adr, entry):
