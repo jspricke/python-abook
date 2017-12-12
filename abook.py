@@ -189,6 +189,10 @@ class Abook(object):
         self._update()
         return [Abook._gen_uid(entry, self._book[entry]['name']) for entry in self._book.sections()]
 
+    def get_filesnames(self):
+        """All filenames"""
+        return [self.filename]
+
     def to_vcards(self):
         """Returns a list of vobject vCards"""
         self._update()
