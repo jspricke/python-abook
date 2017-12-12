@@ -54,7 +54,7 @@ class Abook(object):
         """Appends an address to the Abook addressbook"""
         return self.append_vobject(readOne(text))
 
-    def append_vobject(self, text):
+    def append_vobject(self, text, filename=None):
         """Appends an address to the Abook addressbook"""
         book = ConfigParser(default_section='format')
         with self._lock:
@@ -66,7 +66,7 @@ class Abook(object):
 
         return Abook._gen_uid(section, text.fn.value)
 
-    def remove(self, name):
+    def remove(self, name, filename=None):
         """Removes an address to the Abook addressbook"""
         uid = name.split('@')[0].split('-')
         if len(uid) != 2:
@@ -85,7 +85,7 @@ class Abook(object):
         """Updates an address to the Abook addressbook"""
         return self.replace_vobject(name, readOne(text))
 
-    def replace_vobject(self, name, text):
+    def replace_vobject(self, name, text, filename=None):
         """Updates an address to the Abook addressbook"""
         uid = name.split('@')[0].split('-')
         if len(uid) != 2:
