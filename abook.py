@@ -23,6 +23,7 @@ from threading import Lock
 from configparser import ConfigParser
 from vobject import readOne, readComponents, vCard
 from vobject.vcard import Name, Address
+from json import dumps
 
 
 class Abook(object):
@@ -64,7 +65,7 @@ class Abook(object):
             with open(self.filename, 'w') as fp:
                 book.write(fp, False)
 
-        return Abook._gen_uid(section, text.fn.value)
+        return Abook._gen_uid(self._book[section])
 
     def remove(self, name, filename=None):
         """Removes an address to the Abook addressbook"""
@@ -75,7 +76,7 @@ class Abook(object):
         book = ConfigParser(default_section='format')
         with self._lock:
             book.read(self.filename)
-            linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
+            linehash = sha1(dumps(dict(book[uid[0]]), sort_keys=True).encode('utf-8')).hexdigest()
             if linehash == uid[1]:
                 del book[uid[0]]
                 with open(self.filename, 'w') as fp:
@@ -94,18 +95,18 @@ class Abook(object):
         book = ConfigParser(default_section='format')
         with self._lock:
             book.read(self.filename)
-            linehash = sha1(book[uid[0]]['name'].encode('utf-8')).hexdigest()
+            linehash = sha1(dumps(dict(book[uid[0]]), sort_keys=True).encode('utf-8')).hexdigest()
             if linehash == uid[1]:
                 Abook.to_abook(text, uid[0], book, self.filename)
                 with open(self.filename, 'w') as fp:
                     book.write(fp, False)
 
-        return Abook._gen_uid(uid[0], text.fn.value)
+        return Abook._gen_uid(self._book[uid[0]])
 
     @staticmethod
-    def _gen_uid(index, name):
+    def _gen_uid(entry):
         """Generates a UID based on the index in the Abook file and the hash of the name"""
-        return '%s-%s@%s' % (index, sha1(name.encode('utf-8')).hexdigest(), getfqdn())
+        return '%s-%s@%s' % (entry.name, sha1(dumps(dict(entry), sort_keys=True).encode('utf-8')).hexdigest(), getfqdn())
 
     @staticmethod
     def _gen_name(name):
@@ -138,7 +139,7 @@ class Abook(object):
         """Returns a vobject vCard of the Abook entry"""
         card = vCard()
 
-        card.add('uid').value = Abook._gen_uid(entry.name, entry['name'])
+        card.add('uid').value = Abook._gen_uid(entry)
         card.add('fn').value = entry['name']
         card.add('n').value = Abook._gen_name(entry['name'])
 
@@ -187,7 +188,7 @@ class Abook(object):
         filename  -- unused, for API compatibility only
         """
         self._update()
-        return [Abook._gen_uid(entry, self._book[entry]['name']) for entry in self._book.sections()]
+        return [Abook._gen_uid(self._book[entry]) for entry in self._book.sections()]
 
     def get_filesnames(self):
         """All filenames"""
@@ -208,7 +209,7 @@ class Abook(object):
         uid = uid.split('@')[0].split('-')
         if len(uid) != 2:
             return
-        linehash = sha1(self._book[uid[0]]['name'].encode('utf-8')).hexdigest()
+        linehash = sha1(dumps(dict(self._book[uid[0]]), sort_keys=True).encode('utf-8')).hexdigest()
 
         if linehash == uid[1]:
             return self._to_vcard(self._book[uid[0]])
