@@ -194,6 +194,14 @@ class Abook(object):
         """All filenames"""
         return [self.filename]
 
+    def get_meta(self):
+        """Meta tags of the vObject collection"""
+        return {'tag': 'VADDRESSBOOK'}
+
+    def last_modified(self):
+        """Last time the Abook file was parsed"""
+        return self._last_modified
+
     def to_vcards(self):
         """Returns a list of vobject vCards"""
         self._update()
