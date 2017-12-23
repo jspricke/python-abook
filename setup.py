@@ -16,7 +16,7 @@ setup(name='abook',
           'Environment :: Console',
           'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
           'Topic :: Software Development :: Libraries :: Python Modules',
-          ],
+      ],
 
       install_requires=['vobject'],
       py_modules=['abook'],
@@ -25,5 +25,5 @@ setup(name='abook',
           'console_scripts': [
               'abook2vcf = abook:abook2vcf',
               'vcf2abook = abook:vcf2abook',
-              ]
-          },)
+          ]
+      },)
