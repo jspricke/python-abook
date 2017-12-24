@@ -38,6 +38,7 @@ class Abook(object):
         self._last_modified = 0
         self._book = []
         self._lock = Lock()
+        self._update()
 
     def _update(self):
         """ Update internal state."""
@@ -210,6 +211,7 @@ class Abook(object):
 
     def last_modified(self):
         """Last time the Abook file was parsed"""
+        self._update()
         return self._last_modified
 
     def to_vcards(self):
