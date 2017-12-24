@@ -29,12 +29,12 @@ from vobject.vcard import Name, Address
 class Abook(object):
     """Represents a Abook addressbook"""
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=expanduser('~/.abook/addressbook')):
         """Constructor
 
-        filename -- the filename to load
+        filename -- the filename to load (default: ~/.abook/addressbook)
         """
-        self.filename = filename
+        self._filename = filename
         self._last_modified = 0
         self._book = []
         self._lock = Lock()
@@ -42,10 +42,10 @@ class Abook(object):
     def _update(self):
         """ Update internal state."""
         with self._lock:
-            if getmtime(self.filename) > self._last_modified:
-                self._last_modified = getmtime(self.filename)
+            if getmtime(self._filename) > self._last_modified:
+                self._last_modified = getmtime(self._filename)
                 self._book = ConfigParser(default_section='format')
-                self._book.read(self.filename)
+                self._book.read(self._filename)
 
     def to_vcf(self):
         """ Converts to vCard string"""
@@ -55,53 +55,63 @@ class Abook(object):
         """Appends an address to the Abook addressbook"""
         return self.append_vobject(readOne(text))
 
-    def append_vobject(self, text, filename=None):
-        """Appends an address to the Abook addressbook"""
+    def append_vobject(self, vcard, filename=None):
+        """Appends an address to the Abook addressbook
+        vcard -- vObject to append
+        filename -- unused
+        returns the new UID of the appended vcard
+        """
         book = ConfigParser(default_section='format')
         with self._lock:
-            book.read(self.filename)
+            book.read(self._filename)
             section = max([int(k) for k in book.sections()]) + 1
-            Abook.to_abook(text, str(section), book, self.filename)
-            with open(self.filename, 'w') as fp:
+            Abook.to_abook(vcard, str(section), book, self._filename)
+            with open(self._filename, 'w') as fp:
                 book.write(fp, False)
 
         return Abook._gen_uid(self._book[section])
 
-    def remove(self, name, filename=None):
-        """Removes an address to the Abook addressbook"""
-        uid = name.split('@')[0].split('-')
-        if len(uid) != 2:
+    def remove(self, uid, filename=None):
+        """Removes an address to the Abook addressbook
+        uid -- UID of the entry to remove
+        """
+        entry = uid.split('@')[0].split('-')
+        if len(entry) != 2:
             return
 
         book = ConfigParser(default_section='format')
         with self._lock:
-            book.read(self.filename)
-            linehash = sha1(dumps(dict(book[uid[0]]), sort_keys=True).encode('utf-8')).hexdigest()
-            if linehash == uid[1]:
-                del book[uid[0]]
-                with open(self.filename, 'w') as fp:
+            book.read(self._filename)
+            linehash = sha1(dumps(dict(book[entry[0]]), sort_keys=True).encode('utf-8')).hexdigest()
+            if linehash == entry[1]:
+                del book[entry[0]]
+                with open(self._filename, 'w') as fp:
                     book.write(fp, False)
 
-    def replace(self, name, text):
+    def replace(self, uid, text):
         """Updates an address to the Abook addressbook"""
-        return self.replace_vobject(name, readOne(text))
+        return self.replace_vobject(uid, readOne(text))
 
-    def replace_vobject(self, name, text, filename=None):
-        """Updates an address to the Abook addressbook"""
-        uid = name.split('@')[0].split('-')
-        if len(uid) != 2:
+    def replace_vobject(self, uid, vcard, filename=None):
+        """Updates an address to the Abook addressbook
+        uid -- uid of the entry to replace
+        vcard -- vObject of the new content
+        filename -- unused
+        """
+        entry = uid.split('@')[0].split('-')
+        if len(entry) != 2:
             return
 
         book = ConfigParser(default_section='format')
         with self._lock:
-            book.read(self.filename)
-            linehash = sha1(dumps(dict(book[uid[0]]), sort_keys=True).encode('utf-8')).hexdigest()
-            if linehash == uid[1]:
-                Abook.to_abook(text, uid[0], book, self.filename)
-                with open(self.filename, 'w') as fp:
+            book.read(self._filename)
+            linehash = sha1(dumps(dict(book[entry[0]]), sort_keys=True).encode('utf-8')).hexdigest()
+            if linehash == entry[1]:
+                Abook.to_abook(vcard, entry[0], book, self._filename)
+                with open(self._filename, 'w') as fp:
                     book.write(fp, False)
 
-        return Abook._gen_uid(self._book[uid[0]])
+        return Abook._gen_uid(self._book[entry[0]])
 
     @staticmethod
     def _gen_uid(entry):
@@ -126,7 +136,7 @@ class Abook(object):
     def _add_photo(self, card, name):
         """Tries to load a photo and add it to the vCard"""
         try:
-            photo_file = join(dirname(self.filename), 'photo/%s.jpeg' % name)
+            photo_file = join(dirname(self._filename), 'photo/%s.jpeg' % name)
             jpeg = open(photo_file, 'rb').read()
             photo = card.add('photo')
             photo.type_param = 'jpeg'
@@ -192,7 +202,7 @@ class Abook(object):
 
     def get_filesnames(self):
         """All filenames"""
-        return [self.filename]
+        return [self._filename]
 
     def get_meta(self):
         """Meta tags of the vObject collection"""
@@ -304,7 +314,7 @@ def abook2vcf():
     from sys import stdout
 
     parser = ArgumentParser(description='Converter from Abook to vCard syntax.')
-    parser.add_argument('infile', nargs='?', default=join(expanduser('~'), '.abook/addressbook'),
+    parser.add_argument('infile', nargs='?', default=expanduser('~/.abook/addressbook'),
                         help='The Abook file to process (default: ~/.abook/addressbook)')
     parser.add_argument('outfile', nargs='?', type=FileType('w'), default=stdout,
                         help='Output vCard file (default: stdout)')
@@ -321,7 +331,7 @@ def vcf2abook():
     parser = ArgumentParser(description='Converter from vCard to Abook syntax.')
     parser.add_argument('infile', nargs='?', type=FileType('r'), default=stdin,
                         help='Input vCard file (default: stdin)')
-    parser.add_argument('outfile', nargs='?', default=join(expanduser('~'), '.abook/addressbook'),
+    parser.add_argument('outfile', nargs='?', default=expanduser('~/.abook/addressbook'),
                         help='Output Abook file (default: ~/.abook/addressbook)')
     args = parser.parse_args()
 
