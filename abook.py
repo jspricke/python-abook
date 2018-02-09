@@ -278,13 +278,13 @@ class Abook(object):
         if hasattr(card, 'tel_list'):
             Abook._conv_tel_list(card.tel_list, book[section])
 
-        if hasattr(card, 'nickname'):
+        if hasattr(card, 'nickname') and card.nickname.value:
             book[section]['nick'] = card.nickname.value
 
-        if hasattr(card, 'url'):
+        if hasattr(card, 'url') and card.url.value:
             book[section]['url'] = card.url.value
 
-        if hasattr(card, 'note'):
+        if hasattr(card, 'note') and card.note.value:
             book[section]['notes'] = card.note.value
 
         if hasattr(card, 'photo') and bookfile:
