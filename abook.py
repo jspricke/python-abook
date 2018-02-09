@@ -76,18 +76,12 @@ class Abook(object):
         """Removes an address to the Abook addressbook
         uid -- UID of the entry to remove
         """
-        entry = uid.split('@')[0].split('-')
-        if len(entry) != 2:
-            return
-
         book = ConfigParser(default_section='format')
         with self._lock:
             book.read(self._filename)
-            linehash = sha1(dumps(dict(book[entry[0]]), sort_keys=True).encode('utf-8')).hexdigest()
-            if linehash == entry[1]:
-                del book[entry[0]]
-                with open(self._filename, 'w') as fp:
-                    book.write(fp, False)
+            del book[uid.split('@')[0]]
+            with open(self._filename, 'w') as fp:
+                book.write(fp, False)
 
     def replace(self, uid, text):
         """Updates an address to the Abook addressbook"""
@@ -99,25 +93,23 @@ class Abook(object):
         vcard -- vObject of the new content
         filename -- unused
         """
-        entry = uid.split('@')[0].split('-')
-        if len(entry) != 2:
-            return
+        entry = uid.split('@')[0]
 
         book = ConfigParser(default_section='format')
         with self._lock:
             book.read(self._filename)
-            linehash = sha1(dumps(dict(book[entry[0]]), sort_keys=True).encode('utf-8')).hexdigest()
-            if linehash == entry[1]:
-                Abook.to_abook(vcard, entry[0], book, self._filename)
-                with open(self._filename, 'w') as fp:
-                    book.write(fp, False)
+            Abook.to_abook(vcard, entry, book, self._filename)
+            with open(self._filename, 'w') as fp:
+                book.write(fp, False)
 
-        return Abook._gen_uid(self._book[entry[0]])
+        return Abook._gen_uid(self._book[entry])
 
     @staticmethod
     def _gen_uid(entry):
-        """Generates a UID based on the index in the Abook file and the hash of the name"""
-        return '%s-%s@%s' % (entry.name, sha1(dumps(dict(entry), sort_keys=True).encode('utf-8')).hexdigest(), getfqdn())
+        """Generates a UID based on the index in the Abook file
+        Not that the index is just a number and abook tends to regenerate it upon sorting.
+        """
+        return '%s@%s' % (entry.name, getfqdn())
 
     @staticmethod
     def _gen_name(name):
@@ -225,14 +217,7 @@ class Abook(object):
         uid -- the UID to get (required)
         """
         self._update()
-
-        uid = uid.split('@')[0].split('-')
-        if len(uid) != 2:
-            return
-        linehash = sha1(dumps(dict(self._book[uid[0]]), sort_keys=True).encode('utf-8')).hexdigest()
-
-        if linehash == uid[1]:
-            return self._to_vcard(self._book[uid[0]])
+        return self._to_vcard(self._book[uid.split('@')[0]])
 
     @staticmethod
     def _conv_adr(adr, entry):
