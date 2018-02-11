@@ -17,8 +17,6 @@
 """Python library to convert between Abook and vCard"""
 
 from configparser import ConfigParser
-from hashlib import sha1
-from json import dumps
 from os.path import getmtime, dirname, expanduser, join
 from socket import getfqdn
 from threading import Lock
