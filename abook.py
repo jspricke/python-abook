@@ -17,6 +17,7 @@
 """Python library to convert between Abook and vCard"""
 
 from configparser import ConfigParser
+from hashlib import sha1
 from os.path import getmtime, dirname, expanduser, join
 from socket import getfqdn
 from threading import Lock
@@ -208,6 +209,18 @@ class Abook(object):
         """Returns a list of vobject vCards"""
         self._update()
         return [self._to_vcard(self._book[entry]) for entry in self._book.sections()]
+
+    def to_vobject_etag(self, filename, uid):
+        """Returns the vobject corresponding to the uid
+        filename  -- unused, for API compatibility only
+        uid -- the UID of the Remind line
+        """
+        self._update()
+
+        entry = self._book[uid.split('@')[0]]
+        # TODO add getmtime of photo
+        etag = sha1(str(dict(entry)).encode('utf-8'))
+        return self._to_vcard(entry), '"%s"' % etag.hexdigest()
 
     def to_vobject(self, filename=None, uid=None):
         """Returns the vobject corresponding to the uid
