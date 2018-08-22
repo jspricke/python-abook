@@ -64,12 +64,12 @@ class Abook(object):
         book = ConfigParser(default_section='format')
         with self._lock:
             book.read(self._filename)
-            section = max([int(k) for k in book.sections()]) + 1
-            Abook.to_abook(vcard, str(section), book, self._filename)
+            section = str(max([int(k) for k in book.sections()]) + 1)
+            Abook.to_abook(vcard, section, book, self._filename)
             with open(self._filename, 'w') as fp:
                 book.write(fp, False)
 
-        return Abook._gen_uid(self._book[section])
+        return Abook._gen_uid(book[section])
 
     def remove(self, uid, filename=None):
         """Removes an address to the Abook addressbook
