@@ -64,7 +64,7 @@ class Abook(object):
         book = ConfigParser(default_section='format')
         with self._lock:
             book.read(self._filename)
-            section = str(max([int(k) for k in book.sections()]) + 1)
+            section = str(max([-1] + [int(k) for k in book.sections()]) + 1)
             Abook.to_abook(vcard, section, book, self._filename)
             with open(self._filename, 'w') as fp:
                 book.write(fp, False)
