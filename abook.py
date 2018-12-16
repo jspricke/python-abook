@@ -57,9 +57,9 @@ class Abook(object):
 
     def append_vobject(self, vcard, filename=None):
         """Appends an address to the Abook addressbook
-        vcard -- vObject to append
+        vcard -- vCard to append
         filename -- unused
-        returns the new UID of the appended vcard
+        return the new UID of the appended vcard
         """
         book = ConfigParser(default_section='format')
         with self._lock:
@@ -89,7 +89,7 @@ class Abook(object):
     def replace_vobject(self, uid, vcard, filename=None):
         """Updates an address to the Abook addressbook
         uid -- uid of the entry to replace
-        vcard -- vObject of the new content
+        vcard -- vCard of the new content
         filename -- unused
         """
         entry = uid.split('@')[0]
@@ -117,7 +117,7 @@ class Abook(object):
 
     @staticmethod
     def _gen_addr(entry):
-        """Generates a vobject Address objects"""
+        """Generates a vCard Address object"""
         return Address(street=entry.get('address', ''),
                        extended=entry.get('address2', ''),
                        city=entry.get('city', ''),
@@ -138,7 +138,7 @@ class Abook(object):
             pass
 
     def _to_vcard(self, entry):
-        """Returns a vobject vCard of the Abook entry"""
+        """Return a vCard of the Abook entry"""
         card = vCard()
 
         card.add('uid').value = Abook._gen_uid(entry)
@@ -197,7 +197,7 @@ class Abook(object):
         return [self._filename]
 
     def get_meta(self):
-        """Meta tags of the vObject collection"""
+        """Meta tags of the vCard collection"""
         return {'tag': 'VADDRESSBOOK'}
 
     def last_modified(self):
@@ -206,12 +206,12 @@ class Abook(object):
         return self._last_modified
 
     def to_vcards(self):
-        """Returns a list of vobject vCards"""
+        """Return a list of vCards"""
         self._update()
         return [self._to_vcard(self._book[entry]) for entry in self._book.sections()]
 
     def to_vobject_etag(self, filename, uid):
-        """Returns the vobject corresponding to the uid
+        """Return vCard and etag of one Abook entry
         filename  -- unused, for API compatibility only
         uid -- the UID of the Remind line
         """
@@ -223,7 +223,7 @@ class Abook(object):
         return self._to_vcard(entry), '"%s"' % etag.hexdigest()
 
     def to_vobject(self, filename=None, uid=None):
-        """Returns the vobject corresponding to the uid
+        """Return the vCard corresponding to the uid
         filename  -- unused, for API compatibility only
         uid -- the UID to get (required)
         """
