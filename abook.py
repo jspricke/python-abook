@@ -103,6 +103,12 @@ class Abook(object):
 
         return Abook._gen_uid(self._book[entry])
 
+    def move_vobject(self, uuid, from_filename, to_filename):
+        """Updates the addressbook of an address
+        Not implemented
+        """
+        pass
+
     @staticmethod
     def _gen_uid(entry):
         """Generates a UID based on the index in the Abook file
@@ -213,14 +219,28 @@ class Abook(object):
     def to_vobject_etag(self, filename, uid):
         """Return vCard and etag of one Abook entry
         filename  -- unused, for API compatibility only
-        uid -- the UID of the Remind line
+        uid -- the UID of the Abook entry
+        """
+        return self.to_vobjects(filename, [uid])[0][1:3]
+
+    def to_vobjects(self, filename, uids=None):
+        """Return vCards and etags of all Abook entries in uids
+        filename  -- unused, for API compatibility only
+        uids -- the UIDs of the Abook entries (all if None)
         """
         self._update()
 
-        entry = self._book[uid.split('@')[0]]
-        # TODO add getmtime of photo
-        etag = sha1(str(dict(entry)).encode('utf-8'))
-        return self._to_vcard(entry), '"%s"' % etag.hexdigest()
+        if not uids:
+            uids = self.get_uids(filename)
+
+        items = []
+
+        for uid in uids:
+            entry = self._book[uid.split('@')[0]]
+            # TODO add getmtime of photo
+            etag = sha1(str(dict(entry)).encode('utf-8'))
+            items.append((uid, self._to_vcard(entry), '"%s"' % etag.hexdigest()))
+        return items
 
     def to_vobject(self, filename=None, uid=None):
         """Return the vCard corresponding to the uid
