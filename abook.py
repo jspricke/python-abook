@@ -21,7 +21,7 @@ from hashlib import sha1
 from os.path import getmtime, dirname, expanduser, join
 from socket import getfqdn
 from threading import Lock
-from vobject import readOne, readComponents, vCard
+from vobject import readComponents, vCard
 from vobject.vcard import Name, Address
 
 
@@ -51,10 +51,6 @@ class Abook(object):
         """ Converts to vCard string"""
         return '\r\n'.join([v.serialize() for v in self.to_vcards()])
 
-    def append(self, text):
-        """Appends an address to the Abook addressbook"""
-        return self.append_vobject(readOne(text))
-
     def append_vobject(self, vcard, filename=None):
         """Appends an address to the Abook addressbook
         vcard -- vCard to append
@@ -81,10 +77,6 @@ class Abook(object):
             del book[uid.split('@')[0]]
             with open(self._filename, 'w') as fp:
                 book.write(fp, False)
-
-    def replace(self, uid, text):
-        """Updates an address to the Abook addressbook"""
-        return self.replace_vobject(uid, readOne(text))
 
     def replace_vobject(self, uid, vcard, filename=None):
         """Updates an address to the Abook addressbook
