@@ -18,7 +18,8 @@
 
 from configparser import ConfigParser
 from hashlib import sha1
-from os.path import getmtime, dirname, expanduser, join
+from os import makedirs
+from os.path import dirname, expanduser, getmtime, isfile, join
 from socket import getfqdn
 from threading import Lock
 from vobject import readComponents, vCard
@@ -42,8 +43,9 @@ class Abook(object):
     def _update(self):
         """ Update internal state."""
         with self._lock:
-            if getmtime(self._filename) > self._last_modified:
-                self._last_modified = getmtime(self._filename)
+            if not isfile(self._filename) or getmtime(self._filename) > self._last_modified:
+                if isfile(self._filename):
+                    self._last_modified = getmtime(self._filename)
                 self._book = ConfigParser(default_section='format')
                 self._book.read(self._filename)
 
@@ -297,7 +299,9 @@ class Abook(object):
 
         if hasattr(card, 'photo') and bookfile:
             try:
-                photo_file = join(dirname(bookfile), 'photo/%s.%s' % (card.fn.value, card.photo.TYPE_param))
+                photo_dir = join(dirname(bookfile), 'photo')
+                makedirs(photo_dir, exist_ok=True)
+                photo_file = join(photo_dir, '%s.%s' % (card.fn.value, card.photo.TYPE_param))
                 open(photo_file, 'wb').write(card.photo.value)
             except IOError:
                 pass
