@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Python library to convert between Abook and vCard"""
+"""Python library to convert between Abook and vCard."""
 
 from configparser import ConfigParser
 from hashlib import sha1
@@ -22,15 +22,16 @@ from os import makedirs
 from os.path import dirname, expanduser, getmtime, isfile, join
 from socket import getfqdn
 from threading import Lock
+
 from vobject import readComponents, vCard
-from vobject.vcard import Name, Address
+from vobject.vcard import Address, Name
 
 
-class Abook(object):
-    """Represents a Abook addressbook"""
+class Abook:
+    """Represents a Abook addressbook."""
 
-    def __init__(self, filename=expanduser('~/.abook/addressbook')):
-        """Constructor
+    def __init__(self, filename=expanduser("~/.abook/addressbook")):
+        """Abook Constructor.
 
         filename -- the filename to load (default: ~/.abook/addressbook)
         """
@@ -41,184 +42,197 @@ class Abook(object):
         self._update()
 
     def _update(self):
-        """ Update internal state."""
+        """Update internal state."""
         with self._lock:
-            if not isfile(self._filename) or getmtime(self._filename) > self._last_modified:
+            if (
+                not isfile(self._filename)
+                or getmtime(self._filename) > self._last_modified
+            ):
                 if isfile(self._filename):
                     self._last_modified = getmtime(self._filename)
-                self._book = ConfigParser(default_section='format')
+                self._book = ConfigParser(default_section="format")
                 self._book.read(self._filename)
 
     def to_vcf(self):
-        """ Converts to vCard string"""
-        return '\r\n'.join([v.serialize() for v in self.to_vcards()])
+        """Convert to vCard string."""
+        return "\r\n".join([v.serialize() for v in self.to_vcards()])
 
     def append_vobject(self, vcard, filename=None):
-        """Appends an address to the Abook addressbook
+        """Append address to Abook addressbook.
+
         vcard -- vCard to append
         filename -- unused
         return the new UID of the appended vcard
         """
-        book = ConfigParser(default_section='format')
+        book = ConfigParser(default_section="format")
         with self._lock:
             book.read(self._filename)
             section = str(max([-1] + [int(k) for k in book.sections()]) + 1)
             Abook.to_abook(vcard, section, book, self._filename)
-            with open(self._filename, 'w') as fp:
+            with open(self._filename, "w") as fp:
                 book.write(fp, False)
 
         return Abook._gen_uid(book[section])
 
     def remove(self, uid, filename=None):
-        """Removes an address to the Abook addressbook
+        """Remove address from Abook addressbook.
+
         uid -- UID of the entry to remove
         """
-        book = ConfigParser(default_section='format')
+        book = ConfigParser(default_section="format")
         with self._lock:
             book.read(self._filename)
-            del book[uid.split('@')[0]]
-            with open(self._filename, 'w') as fp:
+            del book[uid.split("@")[0]]
+            with open(self._filename, "w") as fp:
                 book.write(fp, False)
 
     def replace_vobject(self, uid, vcard, filename=None):
-        """Updates an address to the Abook addressbook
+        """Update address in Abook addressbook.
+
         uid -- uid of the entry to replace
         vcard -- vCard of the new content
         filename -- unused
         """
-        entry = uid.split('@')[0]
+        entry = uid.split("@")[0]
 
-        book = ConfigParser(default_section='format')
+        book = ConfigParser(default_section="format")
         with self._lock:
             book.read(self._filename)
             Abook.to_abook(vcard, entry, book, self._filename)
-            with open(self._filename, 'w') as fp:
+            with open(self._filename, "w") as fp:
                 book.write(fp, False)
 
         return Abook._gen_uid(self._book[entry])
 
     def move_vobject(self, uuid, from_filename, to_filename):
-        """Updates the addressbook of an address
+        """Update addressbook of an address.
+
         Not implemented
         """
         pass
 
     @staticmethod
     def _gen_uid(entry):
-        """Generates a UID based on the index in the Abook file
+        """Generate UID based on the index in the Abook file.
+
         Not that the index is just a number and abook tends to regenerate it upon sorting.
         """
-        return '%s@%s' % (entry.name, getfqdn())
+        return "%s@%s" % (entry.name, getfqdn())
 
     @staticmethod
     def _gen_name(name):
-        """Splits the name into family and given name"""
-        return Name(family=name.split(' ')[-1], given=name.split(' ')[:-1])
+        """Split the name into family and given name."""
+        return Name(family=name.split(" ")[-1], given=name.split(" ")[:-1])
 
     @staticmethod
     def _gen_addr(entry):
-        """Generates a vCard Address object"""
-        return Address(street=entry.get('address', ''),
-                       extended=entry.get('address2', ''),
-                       city=entry.get('city', ''),
-                       region=entry.get('state', ''),
-                       code=entry.get('zip', ''),
-                       country=entry.get('country', ''))
+        """Generate a vCard Address object."""
+        return Address(
+            street=entry.get("address", ""),
+            extended=entry.get("address2", ""),
+            city=entry.get("city", ""),
+            region=entry.get("state", ""),
+            code=entry.get("zip", ""),
+            country=entry.get("country", ""),
+        )
 
     def _add_photo(self, card, name):
-        """Tries to load a photo and add it to the vCard"""
+        """Load a photo and add it to the vCard (if exists)."""
         try:
-            photo_file = join(dirname(self._filename), 'photo/%s.jpeg' % name)
-            jpeg = open(photo_file, 'rb').read()
-            photo = card.add('photo')
-            photo.type_param = 'jpeg'
-            photo.encoding_param = 'b'
+            photo_file = join(dirname(self._filename), "photo/%s.jpeg" % name)
+            jpeg = open(photo_file, "rb").read()
+            photo = card.add("photo")
+            photo.type_param = "jpeg"
+            photo.encoding_param = "b"
             photo.value = jpeg
         except IOError:
             pass
 
     def _to_vcard(self, entry):
-        """Return a vCard of the Abook entry"""
+        """Return a vCard of the Abook entry."""
         card = vCard()
 
-        card.add('uid').value = Abook._gen_uid(entry)
-        card.add('fn').value = entry['name']
-        card.add('n').value = Abook._gen_name(entry['name'])
+        card.add("uid").value = Abook._gen_uid(entry)
+        card.add("fn").value = entry["name"]
+        card.add("n").value = Abook._gen_name(entry["name"])
 
-        if 'email' in entry:
-            for email in entry['email'].split(','):
-                card.add('email').value = email
+        if "email" in entry:
+            for email in entry["email"].split(","):
+                card.add("email").value = email
 
-        addr_comps = ['address', 'address2', 'city', 'country', 'zip', 'country']
+        addr_comps = ["address", "address2", "city", "country", "zip", "country"]
         if any(comp in entry for comp in addr_comps):
-            card.add('adr').value = Abook._gen_addr(entry)
+            card.add("adr").value = Abook._gen_addr(entry)
 
-        if 'other' in entry:
-            tel = card.add('tel')
-            tel.value = entry['other']
+        if "other" in entry:
+            tel = card.add("tel")
+            tel.value = entry["other"]
 
-        if 'phone' in entry:
-            tel = card.add('tel')
-            tel.type_param = 'home'
-            tel.value = entry['phone']
+        if "phone" in entry:
+            tel = card.add("tel")
+            tel.type_param = "home"
+            tel.value = entry["phone"]
 
-        if 'workphone' in entry:
-            tel = card.add('tel')
-            tel.type_param = 'work'
-            tel.value = entry['workphone']
+        if "workphone" in entry:
+            tel = card.add("tel")
+            tel.type_param = "work"
+            tel.value = entry["workphone"]
 
-        if 'mobile' in entry:
-            tel = card.add('tel')
-            tel.type_param = 'cell'
-            tel.value = entry['mobile']
+        if "mobile" in entry:
+            tel = card.add("tel")
+            tel.type_param = "cell"
+            tel.value = entry["mobile"]
 
-        if 'nick' in entry:
-            card.add('nickname').value = entry['nick']
+        if "nick" in entry:
+            card.add("nickname").value = entry["nick"]
 
-        if 'url' in entry:
-            card.add('url').value = entry['url']
+        if "url" in entry:
+            card.add("url").value = entry["url"]
 
-        if 'notes' in entry:
-            card.add('note').value = entry['notes']
+        if "notes" in entry:
+            card.add("note").value = entry["notes"]
 
-        self._add_photo(card, entry['name'])
+        self._add_photo(card, entry["name"])
 
         return card
 
     def get_uids(self, filename=None):
-        """Return a list of UIDs
+        """Return a list of UIDs.
+
         filename  -- unused, for API compatibility only
         """
         self._update()
         return [Abook._gen_uid(self._book[entry]) for entry in self._book.sections()]
 
     def get_filesnames(self):
-        """All filenames"""
+        """All filenames."""
         return [self._filename]
 
     def get_meta(self):
-        """Meta tags of the vCard collection"""
-        return {'tag': 'VADDRESSBOOK'}
+        """Meta tags of the vCard collection."""
+        return {"tag": "VADDRESSBOOK"}
 
     def last_modified(self):
-        """Last time the Abook file was parsed"""
+        """Last time the Abook file was parsed."""
         self._update()
         return self._last_modified
 
     def to_vcards(self):
-        """Return a list of vCards"""
+        """Return a list of vCards."""
         self._update()
         return [self._to_vcard(self._book[entry]) for entry in self._book.sections()]
 
     def to_vobject_etag(self, filename, uid):
-        """Return vCard and etag of one Abook entry
+        """Return vCard and etag of one Abook entry.
+
         filename  -- unused, for API compatibility only
         uid -- the UID of the Abook entry
         """
         return self.to_vobjects(filename, [uid])[0][1:3]
 
     def to_vobjects(self, filename, uids=None):
-        """Return vCards and etags of all Abook entries in uids
+        """Return vCards and etags of all Abook entries in uids.
+
         filename  -- unused, for API compatibility only
         uids -- the UIDs of the Abook entries (all if None)
         """
@@ -230,123 +244,144 @@ class Abook(object):
         items = []
 
         for uid in uids:
-            entry = self._book[uid.split('@')[0]]
+            entry = self._book[uid.split("@")[0]]
             # TODO add getmtime of photo
-            etag = sha1(str(dict(entry)).encode('utf-8'))
+            etag = sha1(str(dict(entry)).encode("utf-8"))
             items.append((uid, self._to_vcard(entry), '"%s"' % etag.hexdigest()))
         return items
 
     def to_vobject(self, filename=None, uid=None):
-        """Return the vCard corresponding to the uid
+        """Return the vCard corresponding to the uid.
+
         filename  -- unused, for API compatibility only
         uid -- the UID to get (required)
         """
         self._update()
-        return self._to_vcard(self._book[uid.split('@')[0]])
+        return self._to_vcard(self._book[uid.split("@")[0]])
 
     @staticmethod
     def _conv_adr(adr, entry):
-        """Converts to Abook address format"""
+        """Convert to Abook address format."""
         if adr.value.street:
-            entry['address'] = adr.value.street
+            entry["address"] = adr.value.street
         if adr.value.extended:
-            entry['address2'] = adr.value.extended
+            entry["address2"] = adr.value.extended
         if adr.value.city:
-            entry['city'] = adr.value.city
+            entry["city"] = adr.value.city
         if adr.value.region:
-            entry['state'] = adr.value.region
-        if adr.value.code and adr.value.code != '0':
-            entry['zip'] = adr.value.code
+            entry["state"] = adr.value.region
+        if adr.value.code and adr.value.code != "0":
+            entry["zip"] = adr.value.code
         if adr.value.country:
-            entry['country'] = adr.value.country
+            entry["country"] = adr.value.country
 
     @staticmethod
     def _conv_tel_list(tel_list, entry):
-        """Converts to Abook phone types"""
+        """Convert to Abook phone types."""
         for tel in tel_list:
-            if not hasattr(tel, 'TYPE_param'):
-                entry['other'] = tel.value
-            elif tel.TYPE_param.lower() == 'home':
-                entry['phone'] = tel.value
-            elif tel.TYPE_param.lower() == 'work':
-                entry['workphone'] = tel.value
-            elif tel.TYPE_param.lower() == 'cell':
-                entry['mobile'] = tel.value
+            if not hasattr(tel, "TYPE_param"):
+                entry["other"] = tel.value
+            elif tel.TYPE_param.lower() == "home":
+                entry["phone"] = tel.value
+            elif tel.TYPE_param.lower() == "work":
+                entry["workphone"] = tel.value
+            elif tel.TYPE_param.lower() == "cell":
+                entry["mobile"] = tel.value
 
     @staticmethod
     def to_abook(card, section, book, bookfile=None):
-        """Converts a vCard to Abook"""
+        """Convert a vCard to Abook."""
         book[section] = {}
-        book[section]['name'] = card.fn.value
+        book[section]["name"] = card.fn.value
 
-        if hasattr(card, 'email'):
-            book[section]['email'] = ','.join([e.value for e in card.email_list])
+        if hasattr(card, "email"):
+            book[section]["email"] = ",".join([e.value for e in card.email_list])
 
-        if hasattr(card, 'adr'):
+        if hasattr(card, "adr"):
             Abook._conv_adr(card.adr, book[section])
 
-        if hasattr(card, 'tel_list'):
+        if hasattr(card, "tel_list"):
             Abook._conv_tel_list(card.tel_list, book[section])
 
-        if hasattr(card, 'nickname') and card.nickname.value:
-            book[section]['nick'] = card.nickname.value
+        if hasattr(card, "nickname") and card.nickname.value:
+            book[section]["nick"] = card.nickname.value
 
-        if hasattr(card, 'url') and card.url.value:
-            book[section]['url'] = card.url.value
+        if hasattr(card, "url") and card.url.value:
+            book[section]["url"] = card.url.value
 
-        if hasattr(card, 'note') and card.note.value:
-            book[section]['notes'] = card.note.value
+        if hasattr(card, "note") and card.note.value:
+            book[section]["notes"] = card.note.value
 
-        if hasattr(card, 'photo') and bookfile:
+        if hasattr(card, "photo") and bookfile:
             try:
-                photo_dir = join(dirname(bookfile), 'photo')
+                photo_dir = join(dirname(bookfile), "photo")
                 makedirs(photo_dir, exist_ok=True)
-                photo_file = join(photo_dir, '%s.%s' % (card.fn.value, card.photo.TYPE_param))
-                open(photo_file, 'wb').write(card.photo.value)
+                photo_file = join(
+                    photo_dir, "%s.%s" % (card.fn.value, card.photo.TYPE_param)
+                )
+                open(photo_file, "wb").write(card.photo.value)
             except IOError:
                 pass
 
     @staticmethod
     def abook_file(vcard, bookfile):
-        """Write a new Abook file with the given vcards"""
-        book = ConfigParser(default_section='format')
+        """Write a new Abook file with the given vcards."""
+        book = ConfigParser(default_section="format")
 
-        book['format'] = {}
-        book['format']['program'] = 'abook'
-        book['format']['version'] = '0.6.1'
+        book["format"] = {}
+        book["format"]["program"] = "abook"
+        book["format"]["version"] = "0.6.1"
 
         for (i, card) in enumerate(readComponents(vcard.read())):
             Abook.to_abook(card, str(i), book, bookfile)
-        with open(bookfile, 'w') as fp:
+        with open(bookfile, "w") as fp:
             book.write(fp, False)
 
 
 def abook2vcf():
-    """Command line tool to convert from Abook to vCard"""
+    """Command line tool to convert from Abook to vCard."""
     from argparse import ArgumentParser, FileType
     from os.path import expanduser
     from sys import stdout
 
-    parser = ArgumentParser(description='Converter from Abook to vCard syntax.')
-    parser.add_argument('infile', nargs='?', default=expanduser('~/.abook/addressbook'),
-                        help='The Abook file to process (default: ~/.abook/addressbook)')
-    parser.add_argument('outfile', nargs='?', type=FileType('w'), default=stdout,
-                        help='Output vCard file (default: stdout)')
+    parser = ArgumentParser(description="Converter from Abook to vCard syntax.")
+    parser.add_argument(
+        "infile",
+        nargs="?",
+        default=expanduser("~/.abook/addressbook"),
+        help="The Abook file to process (default: ~/.abook/addressbook)",
+    )
+    parser.add_argument(
+        "outfile",
+        nargs="?",
+        type=FileType("w"),
+        default=stdout,
+        help="Output vCard file (default: stdout)",
+    )
     args = parser.parse_args()
 
     args.outfile.write(Abook(args.infile).to_vcf())
 
 
 def vcf2abook():
-    """Command line tool to convert from vCard to Abook"""
+    """Command line tool to convert from vCard to Abook."""
     from argparse import ArgumentParser, FileType
     from sys import stdin
 
-    parser = ArgumentParser(description='Converter from vCard to Abook syntax.')
-    parser.add_argument('infile', nargs='?', type=FileType('r'), default=stdin,
-                        help='Input vCard file (default: stdin)')
-    parser.add_argument('outfile', nargs='?', default=expanduser('~/.abook/addressbook'),
-                        help='Output Abook file (default: ~/.abook/addressbook)')
+    parser = ArgumentParser(description="Converter from vCard to Abook syntax.")
+    parser.add_argument(
+        "infile",
+        nargs="?",
+        type=FileType("r"),
+        default=stdin,
+        help="Input vCard file (default: stdin)",
+    )
+    parser.add_argument(
+        "outfile",
+        nargs="?",
+        default=expanduser("~/.abook/addressbook"),
+        help="Output Abook file (default: ~/.abook/addressbook)",
+    )
     args = parser.parse_args()
 
     Abook.abook_file(args.infile, args.outfile)
