@@ -16,32 +16,34 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Python library to convert between Abook and vCard."""
 
-from configparser import ConfigParser
+from configparser import ConfigParser, SectionProxy
 from hashlib import sha1
 from os import makedirs
 from os.path import dirname, expanduser, getmtime, isfile, join
 from socket import getfqdn
 from threading import Lock
+from typing import Dict, Iterable, List, Tuple
 
-from vobject import readComponents, vCard
+from vobject import vCard
+from vobject.base import Component, readComponents
 from vobject.vcard import Address, Name
 
 
 class Abook:
     """Represents a Abook addressbook."""
 
-    def __init__(self, filename=expanduser("~/.abook/addressbook")):
+    def __init__(self, filename: str = expanduser("~/.abook/addressbook")) -> None:
         """Abook Constructor.
 
         filename -- the filename to load (default: ~/.abook/addressbook)
         """
         self._filename = filename
-        self._last_modified = 0
-        self._book = []
+        self._last_modified = 0.0
+        self._book = ConfigParser()
         self._lock = Lock()
         self._update()
 
-    def _update(self):
+    def _update(self) -> None:
         """Update internal state."""
         with self._lock:
             if (
@@ -53,11 +55,11 @@ class Abook:
                 self._book = ConfigParser(default_section="format")
                 self._book.read(self._filename)
 
-    def to_vcf(self):
+    def to_vcf(self) -> str:
         """Convert to vCard string."""
         return "\r\n".join([v.serialize() for v in self.to_vcards()])
 
-    def append_vobject(self, vcard, filename=None):
+    def append_vobject(self, vcard: Component, filename: str = "") -> str:
         """Append address to Abook addressbook.
 
         vcard -- vCard to append
@@ -74,7 +76,7 @@ class Abook:
 
         return Abook._gen_uid(book[section])
 
-    def remove(self, uid, filename=None):
+    def remove(self, uid: str, filename: str = "") -> None:
         """Remove address from Abook addressbook.
 
         uid -- UID of the entry to remove
@@ -86,7 +88,7 @@ class Abook:
             with open(self._filename, "w") as fp:
                 book.write(fp, False)
 
-    def replace_vobject(self, uid, vcard, filename=None):
+    def replace_vobject(self, uid: str, vcard: Component, filename: str = "") -> str:
         """Update address in Abook addressbook.
 
         uid -- uid of the entry to replace
@@ -104,7 +106,7 @@ class Abook:
 
         return Abook._gen_uid(self._book[entry])
 
-    def move_vobject(self, uuid, from_filename, to_filename):
+    def move_vobject(self, uuid: str, from_filename: str, to_filename: str) -> None:
         """Update addressbook of an address.
 
         Not implemented
@@ -112,7 +114,7 @@ class Abook:
         pass
 
     @staticmethod
-    def _gen_uid(entry):
+    def _gen_uid(entry: SectionProxy) -> str:
         """Generate UID based on the index in the Abook file.
 
         Not that the index is just a number and abook tends to regenerate it upon sorting.
@@ -120,12 +122,12 @@ class Abook:
         return "%s@%s" % (entry.name, getfqdn())
 
     @staticmethod
-    def _gen_name(name):
+    def _gen_name(name: str) -> Name:
         """Split the name into family and given name."""
-        return Name(family=name.split(" ")[-1], given=name.split(" ")[:-1])
+        return Name(family=name.rsplit(" ")[-1], given=name.rsplit(" ", 1)[0])
 
     @staticmethod
-    def _gen_addr(entry):
+    def _gen_addr(entry: SectionProxy) -> Address:
         """Generate a vCard Address object."""
         return Address(
             street=entry.get("address", ""),
@@ -136,7 +138,7 @@ class Abook:
             country=entry.get("country", ""),
         )
 
-    def _add_photo(self, card, name):
+    def _add_photo(self, card: Component, name: str) -> None:
         """Load a photo and add it to the vCard (if exists)."""
         try:
             photo_file = join(dirname(self._filename), "photo/%s.jpeg" % name)
@@ -148,7 +150,7 @@ class Abook:
         except IOError:
             pass
 
-    def _to_vcard(self, entry):
+    def _to_vcard(self, entry: SectionProxy) -> Component:
         """Return a vCard of the Abook entry."""
         card = vCard()
 
@@ -196,7 +198,7 @@ class Abook:
 
         return card
 
-    def get_uids(self, filename=None):
+    def get_uids(self, filename: str = "") -> List[str]:
         """Return a list of UIDs.
 
         filename  -- unused, for API compatibility only
@@ -204,25 +206,25 @@ class Abook:
         self._update()
         return [Abook._gen_uid(self._book[entry]) for entry in self._book.sections()]
 
-    def get_filesnames(self):
+    def get_filesnames(self) -> List[str]:
         """All filenames."""
         return [self._filename]
 
-    def get_meta(self):
+    def get_meta(self) -> Dict[str, str]:
         """Meta tags of the vCard collection."""
         return {"tag": "VADDRESSBOOK"}
 
-    def last_modified(self):
+    def last_modified(self) -> float:
         """Last time the Abook file was parsed."""
         self._update()
         return self._last_modified
 
-    def to_vcards(self):
+    def to_vcards(self) -> List[Component]:
         """Return a list of vCards."""
         self._update()
         return [self._to_vcard(self._book[entry]) for entry in self._book.sections()]
 
-    def to_vobject_etag(self, filename, uid):
+    def to_vobject_etag(self, filename: str, uid: str) -> Tuple[Component, str]:
         """Return vCard and etag of one Abook entry.
 
         filename  -- unused, for API compatibility only
@@ -230,7 +232,9 @@ class Abook:
         """
         return self.to_vobjects(filename, [uid])[0][1:3]
 
-    def to_vobjects(self, filename, uids=None):
+    def to_vobjects(
+        self, filename: str, uids: Iterable[str] = []
+    ) -> List[Tuple[str, Component, str]]:
         """Return vCards and etags of all Abook entries in uids.
 
         filename  -- unused, for API compatibility only
@@ -250,7 +254,7 @@ class Abook:
             items.append((uid, self._to_vcard(entry), '"%s"' % etag.hexdigest()))
         return items
 
-    def to_vobject(self, filename=None, uid=None):
+    def to_vobject(self, filename: str = "", uid: str = "") -> Component:
         """Return the vCard corresponding to the uid.
 
         filename  -- unused, for API compatibility only
@@ -260,7 +264,7 @@ class Abook:
         return self._to_vcard(self._book[uid.split("@")[0]])
 
     @staticmethod
-    def _conv_adr(adr, entry):
+    def _conv_adr(adr: Component, entry: SectionProxy) -> None:
         """Convert to Abook address format."""
         if adr.value.street:
             entry["address"] = adr.value.street
@@ -276,7 +280,7 @@ class Abook:
             entry["country"] = adr.value.country
 
     @staticmethod
-    def _conv_tel_list(tel_list, entry):
+    def _conv_tel_list(tel_list: List[Component], entry: SectionProxy) -> None:
         """Convert to Abook phone types."""
         for tel in tel_list:
             if not hasattr(tel, "TYPE_param"):
@@ -289,7 +293,9 @@ class Abook:
                 entry["mobile"] = tel.value
 
     @staticmethod
-    def to_abook(card, section, book, bookfile=None):
+    def to_abook(
+        card: Component, section: str, book: ConfigParser, bookfile: str = ""
+    ) -> None:
         """Convert a vCard to Abook."""
         book[section] = {}
         book[section]["name"] = card.fn.value
@@ -324,7 +330,7 @@ class Abook:
                 pass
 
     @staticmethod
-    def abook_file(vcard, bookfile):
+    def abook_file(vcard: Component, bookfile: str) -> None:
         """Write a new Abook file with the given vcards."""
         book = ConfigParser(default_section="format")
 
@@ -338,7 +344,7 @@ class Abook:
             book.write(fp, False)
 
 
-def abook2vcf():
+def abook2vcf() -> None:
     """Command line tool to convert from Abook to vCard."""
     from argparse import ArgumentParser, FileType
     from os.path import expanduser
@@ -363,7 +369,7 @@ def abook2vcf():
     args.outfile.write(Abook(args.infile).to_vcf())
 
 
-def vcf2abook():
+def vcf2abook() -> None:
     """Command line tool to convert from vCard to Abook."""
     from argparse import ArgumentParser, FileType
     from sys import stdin
