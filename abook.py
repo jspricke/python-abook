@@ -22,7 +22,7 @@ from os import makedirs
 from os.path import dirname, expanduser, getmtime, isfile, join
 from socket import getfqdn
 from threading import Lock
-from typing import Dict, Iterable, List, Tuple
+from typing import Iterable
 
 from vobject import vCard
 from vobject.base import Component, readComponents
@@ -198,7 +198,7 @@ class Abook:
 
         return card
 
-    def get_uids(self, filename: str = "") -> List[str]:
+    def get_uids(self, filename: str = "") -> list[str]:
         """Return a list of UIDs.
 
         filename  -- unused, for API compatibility only
@@ -206,11 +206,11 @@ class Abook:
         self._update()
         return [Abook._gen_uid(self._book[entry]) for entry in self._book.sections()]
 
-    def get_filesnames(self) -> List[str]:
+    def get_filesnames(self) -> list[str]:
         """All filenames."""
         return [self._filename]
 
-    def get_meta(self) -> Dict[str, str]:
+    def get_meta(self) -> dict[str, str]:
         """Meta tags of the vCard collection."""
         return {"tag": "VADDRESSBOOK"}
 
@@ -219,12 +219,12 @@ class Abook:
         self._update()
         return self._last_modified
 
-    def to_vcards(self) -> List[Component]:
+    def to_vcards(self) -> list[Component]:
         """Return a list of vCards."""
         self._update()
         return [self._to_vcard(self._book[entry]) for entry in self._book.sections()]
 
-    def to_vobject_etag(self, filename: str, uid: str) -> Tuple[Component, str]:
+    def to_vobject_etag(self, filename: str, uid: str) -> tuple[Component, str]:
         """Return vCard and etag of one Abook entry.
 
         filename  -- unused, for API compatibility only
@@ -234,7 +234,7 @@ class Abook:
 
     def to_vobjects(
         self, filename: str, uids: Iterable[str] = []
-    ) -> List[Tuple[str, Component, str]]:
+    ) -> list[tuple[str, Component, str]]:
         """Return vCards and etags of all Abook entries in uids.
 
         filename  -- unused, for API compatibility only
@@ -280,7 +280,7 @@ class Abook:
             entry["country"] = adr.value.country
 
     @staticmethod
-    def _conv_tel_list(tel_list: List[Component], entry: SectionProxy) -> None:
+    def _conv_tel_list(tel_list: list[Component], entry: SectionProxy) -> None:
         """Convert to Abook phone types."""
         for tel in tel_list:
             if not hasattr(tel, "TYPE_param"):
