@@ -71,8 +71,8 @@ class Abook:
             book.read(self._filename)
             section = str(max([-1] + [int(k) for k in book.sections()]) + 1)
             Abook.to_abook(vcard, section, book, self._filename)
-            with open(self._filename, "w") as fp:
-                book.write(fp, False)
+            with open(self._filename, "w", encoding="utf-8") as outfile:
+                book.write(outfile, False)
 
         return Abook._gen_uid(book[section])
 
@@ -85,8 +85,8 @@ class Abook:
         with self._lock:
             book.read(self._filename)
             del book[uid.split("@")[0]]
-            with open(self._filename, "w") as fp:
-                book.write(fp, False)
+            with open(self._filename, "w", encoding="utf-8") as outfile:
+                book.write(outfile, False)
 
     def replace_vobject(self, uid: str, vcard: Component, filename: str = "") -> str:
         """Update address in Abook addressbook.
@@ -101,8 +101,8 @@ class Abook:
         with self._lock:
             book.read(self._filename)
             Abook.to_abook(vcard, entry, book, self._filename)
-            with open(self._filename, "w") as fp:
-                book.write(fp, False)
+            with open(self._filename, "w", encoding="utf-8") as outfile:
+                book.write(outfile, False)
 
         return Abook._gen_uid(self._book[entry])
 
@@ -119,7 +119,7 @@ class Abook:
 
         Not that the index is just a number and abook tends to regenerate it upon sorting.
         """
-        return "%s@%s" % (entry.name, getfqdn())
+        return f"{entry.name}@{getfqdn()}"
 
     @staticmethod
     def _gen_name(name: str) -> Name:
@@ -141,8 +141,9 @@ class Abook:
     def _add_photo(self, card: Component, name: str) -> None:
         """Load a photo and add it to the vCard (if exists)."""
         try:
-            photo_file = join(dirname(self._filename), "photo/%s.jpeg" % name)
-            jpeg = open(photo_file, "rb").read()
+            photo_file = join(dirname(self._filename), f"photo/{name}.jpeg")
+            with open(photo_file, "rb") as infile:
+                jpeg = infile.read()
             photo = card.add("photo")
             photo.type_param = "jpeg"
             photo.encoding_param = "b"
@@ -210,7 +211,8 @@ class Abook:
         """All filenames."""
         return [self._filename]
 
-    def get_meta(self) -> dict[str, str]:
+    @staticmethod
+    def get_meta() -> dict[str, str]:
         """Meta tags of the vCard collection."""
         return {"tag": "VADDRESSBOOK"}
 
@@ -233,7 +235,7 @@ class Abook:
         return self.to_vobjects(filename, [uid])[0][1:3]
 
     def to_vobjects(
-        self, filename: str, uids: Iterable[str] = []
+        self, filename: str, uids: Iterable[str] = None
     ) -> list[tuple[str, Component, str]]:
         """Return vCards and etags of all Abook entries in uids.
 
@@ -251,7 +253,7 @@ class Abook:
             entry = self._book[uid.split("@")[0]]
             # TODO add getmtime of photo
             etag = sha1(str(dict(entry)).encode("utf-8"))
-            items.append((uid, self._to_vcard(entry), '"%s"' % etag.hexdigest()))
+            items.append((uid, self._to_vcard(entry), f'"{etag.hexdigest()}"'))
         return items
 
     def to_vobject(self, filename: str = "", uid: str = "") -> Component:
@@ -322,10 +324,9 @@ class Abook:
             try:
                 photo_dir = join(dirname(bookfile), "photo")
                 makedirs(photo_dir, exist_ok=True)
-                photo_file = join(
-                    photo_dir, "%s.%s" % (card.fn.value, card.photo.TYPE_param)
-                )
-                open(photo_file, "wb").write(card.photo.value)
+                photo_file = join(photo_dir, f"{card.fn.value}.{card.photo.TYPE_param}")
+                with open(photo_file, "wb") as outfile:
+                    outfile.write(card.photo.value)
             except IOError:
                 pass
 
@@ -340,8 +341,8 @@ class Abook:
 
         for (i, card) in enumerate(readComponents(vcard.read())):
             Abook.to_abook(card, str(i), book, bookfile)
-        with open(bookfile, "w") as fp:
-            book.write(fp, False)
+        with open(bookfile, "w", encoding="utf-8") as outfile:
+            book.write(outfile, False)
 
 
 def abook2vcf() -> None:
