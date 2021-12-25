@@ -32,12 +32,12 @@ from vobject.vcard import Address, Name
 class Abook:
     """Represents a Abook addressbook."""
 
-    def __init__(self, filename: str = expanduser("~/.abook/addressbook")) -> None:
+    def __init__(self, filename: str = None) -> None:
         """Abook Constructor.
 
         filename -- the filename to load (default: ~/.abook/addressbook)
         """
-        self._filename = filename
+        self._filename = filename if filename else expanduser("~/.abook/addressbook")
         self._last_modified = 0.0
         self._book = ConfigParser()
         self._lock = Lock()
