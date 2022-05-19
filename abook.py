@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Python library to convert between Abook and vCard."""
 
+from collections.abc import Iterable
 from configparser import ConfigParser, SectionProxy
 from hashlib import sha1
 from os import makedirs
 from os.path import dirname, expanduser, getmtime, isfile, join
 from socket import getfqdn
 from threading import Lock
-from typing import Iterable
 
 from vobject import vCard
 from vobject.base import Component, readComponents
@@ -59,7 +59,7 @@ class Abook:
         """Convert to vCard string."""
         return "\r\n".join([v.serialize() for v in self.to_vcards()])
 
-    def append_vobject(self, vcard: Component, filename: str = "") -> str:
+    def append_vobject(self, vcard: Component, _filename: str = "") -> str:
         """Append address to Abook addressbook.
 
         vcard -- vCard to append
@@ -76,7 +76,7 @@ class Abook:
 
         return Abook._gen_uid(book[section])
 
-    def remove(self, uid: str, filename: str = "") -> None:
+    def remove(self, uid: str, _filename: str = "") -> None:
         """Remove address from Abook addressbook.
 
         uid -- UID of the entry to remove
@@ -88,7 +88,7 @@ class Abook:
             with open(self._filename, "w", encoding="utf-8") as outfile:
                 book.write(outfile, False)
 
-    def replace_vobject(self, uid: str, vcard: Component, filename: str = "") -> str:
+    def replace_vobject(self, uid: str, vcard: Component, _filename: str = "") -> str:
         """Update address in Abook addressbook.
 
         uid -- uid of the entry to replace
@@ -111,7 +111,6 @@ class Abook:
 
         Not implemented
         """
-        pass
 
     @staticmethod
     def _gen_uid(entry: SectionProxy) -> str:
@@ -199,7 +198,7 @@ class Abook:
 
         return card
 
-    def get_uids(self, filename: str = "") -> list[str]:
+    def get_uids(self, _filename: str = "") -> list[str]:
         """Return a list of UIDs.
 
         filename  -- unused, for API compatibility only
@@ -256,7 +255,7 @@ class Abook:
             items.append((uid, self._to_vcard(entry), f'"{etag.hexdigest()}"'))
         return items
 
-    def to_vobject(self, filename: str = "", uid: str = "") -> Component:
+    def to_vobject(self, _filename: str = "", uid: str = "") -> Component:
         """Return the vCard corresponding to the uid.
 
         filename  -- unused, for API compatibility only
@@ -348,7 +347,6 @@ class Abook:
 def abook2vcf() -> None:
     """Command line tool to convert from Abook to vCard."""
     from argparse import ArgumentParser, FileType
-    from os.path import expanduser
     from sys import stdout
 
     parser = ArgumentParser(description="Converter from Abook to vCard syntax.")
