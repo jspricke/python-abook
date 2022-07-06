@@ -359,7 +359,7 @@ def abook2vcf() -> None:
     parser.add_argument(
         "outfile",
         nargs="?",
-        type=FileType("w"),
+        type=FileType("w", encoding="utf-8"),
         default=stdout,
         help="Output vCard file (default: stdout)",
     )
@@ -377,7 +377,7 @@ def vcf2abook() -> None:
     parser.add_argument(
         "infile",
         nargs="?",
-        type=FileType("r"),
+        type=FileType("r", encoding="utf-8"),
         default=stdin,
         help="Input vCard file (default: stdin)",
     )
