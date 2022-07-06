@@ -365,6 +365,10 @@ def abook2vcf() -> None:
     )
     args = parser.parse_args()
 
+    if args.infile and args.infile != "-" and not isfile(args.infile):
+        args.outfile = open(args.infile, "w", encoding="utf-8")
+        args.infile = None
+
     args.outfile.write(Abook(args.infile).to_vcf())
 
 
