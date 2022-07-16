@@ -32,13 +32,14 @@ from vobject.vcard import Address, Name
 class Abook:
     """Represents a Abook addressbook."""
 
-    def __init__(self, filename: str = None) -> None:
+    def __init__(self, filename: str = None, fqdn: str = None) -> None:
         """Abook Constructor.
 
         filename -- the filename to load (default: ~/.abook/addressbook)
         """
         self._filename = filename if filename else expanduser("~/.abook/addressbook")
         self._last_modified = 0.0
+        self._fqdn = fqdn if fqdn else getfqdn()
         self._book = ConfigParser()
         self._lock = Lock()
         self._update()
@@ -74,7 +75,7 @@ class Abook:
             with open(self._filename, "w", encoding="utf-8") as outfile:
                 book.write(outfile, False)
 
-        return Abook._gen_uid(book[section])
+        return self._gen_uid(book[section])
 
     def remove(self, uid: str, _filename: str = "") -> None:
         """Remove address from Abook addressbook.
@@ -104,7 +105,7 @@ class Abook:
             with open(self._filename, "w", encoding="utf-8") as outfile:
                 book.write(outfile, False)
 
-        return Abook._gen_uid(self._book[entry])
+        return self._gen_uid(self._book[entry])
 
     def move_vobject(self, uuid: str, from_filename: str, to_filename: str) -> None:
         """Update addressbook of an address.
@@ -112,13 +113,12 @@ class Abook:
         Not implemented
         """
 
-    @staticmethod
-    def _gen_uid(entry: SectionProxy) -> str:
+    def _gen_uid(self, entry: SectionProxy) -> str:
         """Generate UID based on the index in the Abook file.
 
         Not that the index is just a number and abook tends to regenerate it upon sorting.
         """
-        return f"{entry.name}@{getfqdn()}"
+        return f"{entry.name}@{self._fqdn}"
 
     @staticmethod
     def _gen_name(name: str) -> Name:
@@ -154,7 +154,7 @@ class Abook:
         """Return a vCard of the Abook entry."""
         card = vCard()
 
-        card.add("uid").value = Abook._gen_uid(entry)
+        card.add("uid").value = self._gen_uid(entry)
         card.add("fn").value = entry["name"]
         card.add("n").value = Abook._gen_name(entry["name"])
 
@@ -204,7 +204,7 @@ class Abook:
         filename  -- unused, for API compatibility only
         """
         self._update()
-        return [Abook._gen_uid(self._book[entry]) for entry in self._book.sections()]
+        return [self._gen_uid(self._book[entry]) for entry in self._book.sections()]
 
     def get_filesnames(self) -> list[str]:
         """All filenames."""
