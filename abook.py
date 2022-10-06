@@ -37,9 +37,9 @@ class Abook:
 
         filename -- the filename to load (default: ~/.abook/addressbook)
         """
-        self._filename = filename if filename else expanduser("~/.abook/addressbook")
+        self._filename = filename or expanduser("~/.abook/addressbook")
         self._last_modified = 0.0
-        self._fqdn = fqdn if fqdn else getfqdn()
+        self._fqdn = fqdn or getfqdn()
         self._book = ConfigParser()
         self._lock = Lock()
         self._update()
