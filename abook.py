@@ -268,7 +268,10 @@ class Abook:
     def _conv_adr(adr: Component, entry: SectionProxy) -> None:
         """Convert to Abook address format."""
         if adr.value.street:
-            entry["address"] = adr.value.street
+            if isinstance(adr.value.street , list):
+                entry["address"] = ",".join(adr.value.street)
+            else:
+                entry["address"] = adr.value.street
         if adr.value.extended:
             entry["address2"] = adr.value.extended
         if adr.value.city:
