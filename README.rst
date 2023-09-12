@@ -20,7 +20,7 @@ Install
 
 :: 
 
-  git clone git@github.com:jspricke/python-abook.git
+  git clone https://github.com/jspricke/python-abook.git
   cd python-abook
 
   # builds the library (for use in your own scripts)
