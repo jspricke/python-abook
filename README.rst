@@ -28,8 +28,6 @@ Install
 
   # installs executables `abook2vcf` `vcf2abook` to $PATH 
   # mac (/opt/homebrew/bin)
-  # linux?
-  # windows?
   python3 setup.py install
 
 Usage
@@ -41,8 +39,12 @@ Additionally python-abook can convert your abook addressbook to .vcf format:
 
 :: 
 
+  # convert your address book to vcf (one vcf file contatining all contacts)
+
   $ abook2vcf --help
   $ abook2vcf ~/path/to/abook/addressbook ~/path/to/write/contacts.vcf
+
+  # convert vcf contact/s and write them to your addressbook
 
   $ vcf2abook --help
   $ vcf2abook ~/path/to/contact.vcf ~/path/to/abook/addressbook
