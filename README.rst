@@ -14,3 +14,37 @@ Configuration
   view ADDRESS = address, address2, city, state, zip, country
   view PHONE = phone, workphone, mobile, other
   view OTHER = nick, url, notes
+
+Install
+------------------
+
+:: 
+
+  git clone git@github.com:jspricke/python-abook.git
+  cd python-abook
+
+  # builds the library (for use in your own scripts)
+  python3 setup.py build
+
+  # installs executables `abook2vcf` `vcf2abook` to $PATH 
+  # mac (/opt/homebrew/bin)
+  # linux?
+  # windows?
+  python3 setup.py install
+
+Usage
+-----
+
+python-abook converts vcards (.vcf files) and writes them to your abook addressbook. 
+It can also handle .vcf files containing multiple contacts. 
+Additionally python-abook can convert your abook addressbook to .vcf format:
+
+:: 
+
+  $ abook2vcf --help
+  $ abook2vcf ~/path/to/abook/addressbook ~/path/to/write/contacts.vcf
+
+  $ vcf2abook --help
+  $ vcf2abook ~/path/to/contact.vcf ~/path/to/abook/addressbook
+
+
