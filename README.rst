@@ -44,6 +44,11 @@ Additionally python-abook can convert your abook addressbook to .vcf format:
   $ abook2vcf --help
   $ abook2vcf ~/path/to/abook/addressbook ~/path/to/write/contacts.vcf
 
+  # ommit the output file to print results to stdout
+
+  $ abook2vcf ~/path/to/abook/addressbook
+
+
   # convert vcf contact/s and write them to your addressbook
 
   $ vcf2abook --help
