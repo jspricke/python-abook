@@ -50,7 +50,6 @@ Additionally python-abook can convert your abook addressbook to .vcf format:
 
 
   # convert vcf contact/s and write them to your addressbook
-  # NOTE: This will OVERWRITE your entire addressbook with the contents of input vcf
 
   $ vcf2abook --help
   $ vcf2abook ~/path/to/contact.vcf ~/path/to/abook/addressbook
