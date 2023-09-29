@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Python library to convert between Abook and vCard."""
 
+import os
 from collections.abc import Iterable
 from configparser import ConfigParser, SectionProxy
 from hashlib import sha1
@@ -396,4 +397,12 @@ def vcf2abook() -> None:
     )
     args = parser.parse_args()
 
-    Abook.abook_file(args.infile, args.outfile)
+    if os.path.isfile(args.outfile):
+        abook = Abook(args.outfile)
+        for vcard in args.infile:
+            if vcard in abook.get_uids():
+                Abook.replace_vobject(vcard.uid, vcard, args.outfile)
+            else:
+                abook.append_vobject(vcard, args.outfile)
+    else:
+        Abook.abook_file(args.infile, args.outfile)
