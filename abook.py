@@ -401,8 +401,11 @@ def vcf2abook() -> None:
         abook = Abook(args.outfile)
         for vcard in args.infile:
             if vcard in abook.get_uids():
-                Abook.replace_vobject(vcard.uid, vcard, args.outfile)
+                print("vcard is in abook")
+                # abook.replace_vobject(vcard, vcard)
             else:
-                abook.append_vobject(vcard, args.outfile)
+
+                print("vcard is NOT in abook")
+                # abook.append_vobject(vcard)
     else:
         Abook.abook_file(args.infile, args.outfile)
