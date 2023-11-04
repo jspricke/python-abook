@@ -17,6 +17,7 @@
 """Python library to convert between Abook and vCard."""
 
 import os
+import re
 from collections.abc import Iterable
 from configparser import ConfigParser, SectionProxy
 from hashlib import sha1
@@ -397,15 +398,15 @@ def vcf2abook() -> None:
     )
     args = parser.parse_args()
 
+    
     if os.path.isfile(args.outfile):
         abook = Abook(args.outfile)
-        for vcard in args.infile:
-            if vcard in abook.get_uids():
-                print("vcard is in abook")
-                # abook.replace_vobject(vcard, vcard)
-            else:
+        abook_uids = abook.get_uids()
+        for line in args.infile:
+            if re.search(re.compile("FN:"), line):
+                full_name = line.strip("FN:")
 
-                print("vcard is NOT in abook")
-                # abook.append_vobject(vcard)
     else:
         Abook.abook_file(args.infile, args.outfile)
+
+vcf2abook()
