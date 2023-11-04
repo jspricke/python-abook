@@ -118,7 +118,7 @@ class Abook:
     def _gen_uid(self, entry: SectionProxy) -> str:
         """Generate UID based on the index in the Abook file.
 
-        Not that the index is just a number and abook tends to regenerate it upon sorting.
+        Note that the index is just a number and abook tends to regenerate it upon sorting.
         """
         return f"{entry.name}@{self._fqdn}"
 
@@ -211,6 +211,17 @@ class Abook:
     def get_filesnames(self) -> list[str]:
         """All filenames."""
         return [self._filename]
+
+    def get_fn_by_uid(self, uid: str) -> str:
+        """Get the FN (Full Name) of an entry by UID.
+
+        uid -- the UID of the entry
+        """
+        self._update()
+        contact_id = uid.split("@")[0]
+        if contact_id in self._book:
+            return self._book[contact_id].get("name", "")
+        return ""
 
     @staticmethod
     def get_meta() -> dict[str, str]:
@@ -349,6 +360,8 @@ class Abook:
             book.write(outfile, False)
 
 
+
+
 def abook2vcf() -> None:
     """Command line tool to convert from Abook to vCard."""
     from argparse import ArgumentParser, FileType
@@ -402,9 +415,21 @@ def vcf2abook() -> None:
     if os.path.isfile(args.outfile):
         abook = Abook(args.outfile)
         abook_uids = abook.get_uids()
+        full_names = []
+        # get full names of incoming vcf contact
         for line in args.infile:
-            if re.search(re.compile("FN:"), line):
-                full_name = line.strip("FN:")
+            if re.search(re.compile("^FN:.?"), line):
+                full_name = line.strip("FN:").strip()
+                full_names.append(full_name)
+
+        # check full name against all abook contacts (by uid)
+        for uid in abook_uids:
+            name = abook.get_fn_by_uid(uid)
+        
+            if name in full_names:
+                print(name, "is already in addressbook. Skipping")
+            else:
+                abook.append_vobject(args.infile)
 
     else:
         Abook.abook_file(args.infile, args.outfile)
