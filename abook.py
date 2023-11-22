@@ -17,7 +17,6 @@
 """Python library to convert between Abook and vCard."""
 
 import os
-import re
 from collections.abc import Iterable
 from configparser import ConfigParser, SectionProxy
 from hashlib import sha1
@@ -27,7 +26,7 @@ from socket import getfqdn
 from threading import Lock
 
 from vobject import vCard
-from vobject.base import Component, readComponents
+from vobject.base import Component, readComponents, readOne
 from vobject.vcard import Address, Name
 
 
@@ -411,25 +410,28 @@ def vcf2abook() -> None:
     )
     args = parser.parse_args()
 
-    
     if os.path.isfile(args.outfile):
+        vcard_file = args.infile.name
         abook = Abook(args.outfile)
         abook_uids = abook.get_uids()
         full_names = []
-        # get full names of incoming vcf contact
-        for line in args.infile:
-            if re.search(re.compile("^FN:.?"), line):
-                full_name = line.strip("FN:").strip()
-                full_names.append(full_name)
 
-        # check full name against all abook contacts (by uid)
-        for uid in abook_uids:
-            name = abook.get_fn_by_uid(uid)
-        
-            if name in full_names:
-                print(name, "is already in addressbook. Skipping")
-            else:
-                abook.append_vobject(args.infile)
+        # check if incoming contact exists in addressbook
+        with open(vcard_file) as file:
+            vcard_list = readComponents(file)
+
+            # get all full names currently in addressbook
+            for uid in abook_uids:
+                name = abook.get_fn_by_uid(uid)
+                full_names.append(name)
+
+            # check if incoming name matches against any in array of full names
+            for card in vcard_list:
+                if card.fn.value in full_names:
+                    print(card.fn.value, "is already in addressbook. Skipping")
+                else:
+                    abook.append_vobject(card)
+                    print("added", card.fn.value, "to", args.outfile)
 
     else:
         Abook.abook_file(args.infile, args.outfile)
