@@ -147,7 +147,7 @@ class Abook:
             photo.type_param = "jpeg"
             photo.encoding_param = "b"
             photo.value = jpeg
-        except IOError:
+        except OSError:
             pass
 
     def _to_vcard(self, entry: SectionProxy) -> Component:
@@ -329,7 +329,7 @@ class Abook:
                 photo_file = join(photo_dir, f"{card.fn.value}.{card.photo.TYPE_param}")
                 with open(photo_file, "wb") as outfile:
                     outfile.write(card.photo.value)
-            except IOError:
+            except OSError:
                 pass
 
     @staticmethod
