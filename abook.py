@@ -368,7 +368,7 @@ def abook2vcf() -> None:
     )
     args = parser.parse_args()
 
-    if args.infile and args.infile != "-" and not isfile(args.infile):
+    if args.infile and args.infile != "-" and not isfile(args.infile) and not args.outfile:
         args.outfile = open(args.infile, "w", encoding="utf-8")
         args.infile = None
 
