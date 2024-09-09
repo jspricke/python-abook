@@ -32,7 +32,7 @@ from vobject.vcard import Address, Name
 class Abook:
     """Represents a Abook addressbook."""
 
-    def __init__(self, filename: str = None, fqdn: str = None) -> None:
+    def __init__(self, filename: str | None = None, fqdn: str | None= None) -> None:
         """Abook Constructor.
 
         filename -- the filename to load (default: ~/.abook/addressbook)
@@ -234,7 +234,7 @@ class Abook:
         return self.to_vobjects(filename, [uid])[0][1:3]
 
     def to_vobjects(
-        self, filename: str, uids: Iterable[str] = None
+        self, filename: str, uids: Iterable[str] | None = None
     ) -> list[tuple[str, Component, str]]:
         """Return vCards and etags of all Abook entries in uids.
 
