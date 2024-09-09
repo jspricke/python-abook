@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="abook",
-    version="0.8.0",
+    version="0.9.0",
     description="Python library to convert between Abook and vCard",
     long_description=open("README.rst").read(),
     author="Jochen Sprickerhof",
