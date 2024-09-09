@@ -32,7 +32,7 @@ from vobject.vcard import Address, Name
 class Abook:
     """Represents a Abook addressbook."""
 
-    def __init__(self, filename: str | None = None, fqdn: str | None= None) -> None:
+    def __init__(self, filename: str | None = None, fqdn: str | None = None) -> None:
         """Abook Constructor.
 
         filename -- the filename to load (default: ~/.abook/addressbook)
@@ -47,10 +47,7 @@ class Abook:
     def _update(self) -> None:
         """Update internal state."""
         with self._lock:
-            if (
-                not isfile(self._filename)
-                or getmtime(self._filename) > self._last_modified
-            ):
+            if not isfile(self._filename) or getmtime(self._filename) > self._last_modified:
                 if isfile(self._filename):
                     self._last_modified = getmtime(self._filename)
                 self._book = ConfigParser(default_section="format")
@@ -233,9 +230,7 @@ class Abook:
         """
         return self.to_vobjects(filename, [uid])[0][1:3]
 
-    def to_vobjects(
-        self, filename: str, uids: Iterable[str] | None = None
-    ) -> list[tuple[str, Component, str]]:
+    def to_vobjects(self, filename: str, uids: Iterable[str] | None = None) -> list[tuple[str, Component, str]]:
         """Return vCards and etags of all Abook entries in uids.
 
         filename  -- unused, for API compatibility only
@@ -268,7 +263,7 @@ class Abook:
     def _conv_adr(adr: Component, entry: SectionProxy) -> None:
         """Convert to Abook address format."""
         if adr.value.street:
-            if isinstance(adr.value.street , list):
+            if isinstance(adr.value.street, list):
                 entry["address"] = ",".join(adr.value.street)
             else:
                 entry["address"] = adr.value.street
@@ -297,9 +292,7 @@ class Abook:
                 entry["mobile"] = tel.value
 
     @staticmethod
-    def to_abook(
-        card: Component, section: str, book: ConfigParser, bookfile: str = ""
-    ) -> None:
+    def to_abook(card: Component, section: str, book: ConfigParser, bookfile: str = "") -> None:
         """Convert a vCard to Abook."""
         book[section] = {}
         book[section]["name"] = card.fn.value
@@ -341,7 +334,7 @@ class Abook:
         book["format"]["program"] = "abook"
         book["format"]["version"] = "0.6.1"
 
-        for (i, card) in enumerate(readComponents(vcard.read())):
+        for i, card in enumerate(readComponents(vcard.read())):
             Abook.to_abook(card, str(i), book, bookfile)
         with open(bookfile, "w", encoding="utf-8") as outfile:
             book.write(outfile, False)
