@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Python library to convert between Abook and vCard."""
 
+import os
 from collections.abc import Iterable
 from configparser import ConfigParser, SectionProxy
 from hashlib import sha1
@@ -25,7 +26,7 @@ from socket import getfqdn
 from threading import Lock
 
 from vobject import vCard
-from vobject.base import Component, readComponents
+from vobject.base import Component, readComponents, readOne
 from vobject.vcard import Address, Name
 
 
@@ -113,7 +114,7 @@ class Abook:
     def _gen_uid(self, entry: SectionProxy) -> str:
         """Generate UID based on the index in the Abook file.
 
-        Not that the index is just a number and abook tends to regenerate it upon sorting.
+        Note that the index is just a number and abook tends to regenerate it upon sorting.
         """
         return f"{entry.name}@{self._fqdn}"
 
@@ -206,6 +207,17 @@ class Abook:
     def get_filesnames(self) -> list[str]:
         """All filenames."""
         return [self._filename]
+
+    def get_fn_by_uid(self, uid: str) -> str:
+        """Get the FN (Full Name) of an entry by UID.
+
+        uid -- the UID of the entry
+        """
+        self._update()
+        contact_id = uid.split("@")[0]
+        if contact_id in self._book:
+            return self._book[contact_id].get("name", "")
+        return ""
 
     @staticmethod
     def get_meta() -> dict[str, str]:
@@ -340,6 +352,8 @@ class Abook:
             book.write(outfile, False)
 
 
+
+
 def abook2vcf() -> None:
     """Command line tool to convert from Abook to vCard."""
     from argparse import ArgumentParser, FileType
@@ -389,4 +403,30 @@ def vcf2abook() -> None:
     )
     args = parser.parse_args()
 
-    Abook.abook_file(args.infile, args.outfile)
+    if os.path.isfile(args.outfile):
+        vcard_file = args.infile.name
+        abook = Abook(args.outfile)
+        abook_uids = abook.get_uids()
+        full_names = []
+
+        # check if incoming contact exists in addressbook
+        with open(vcard_file) as file:
+            vcard_list = readComponents(file)
+
+            # get all full names currently in addressbook
+            for uid in abook_uids:
+                name = abook.get_fn_by_uid(uid)
+                full_names.append(name)
+
+            # check if incoming name matches against any in array of full names
+            for card in vcard_list:
+                if card.fn.value in full_names:
+                    print(card.fn.value, "is already in addressbook. Skipping")
+                else:
+                    abook.append_vobject(card)
+                    print("added", card.fn.value, "to", args.outfile)
+
+    else:
+        Abook.abook_file(args.infile, args.outfile)
+
+vcf2abook()
